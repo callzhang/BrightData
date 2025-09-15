@@ -199,6 +199,28 @@ def update_manual_snapshot_status(snapshot_id, dataset_id):
         st.error(f"Error updating snapshot status: {e}")
         return False
 
+def get_snapshot_filter_details(snapshot_id, dataset_id):
+    """
+    Attempt to retrieve filter details from BrightData API.
+    Note: This may not always work as the API doesn't always return original filter criteria.
+    """
+    try:
+        if dataset_id and dataset_id != 'unknown':
+            brightdata = BrightDataFilter(dataset_id)
+            metadata = brightdata.get_snapshot_metadata(snapshot_id)
+            
+            # Check if metadata contains filter information
+            if metadata and 'filter' in metadata:
+                return metadata['filter']
+            elif metadata and 'query' in metadata:
+                return metadata['query']
+            else:
+                return None
+        return None
+    except Exception as e:
+        st.error(f"Error retrieving filter details: {e}")
+        return None
+
 def main():
     # Header
     st.markdown('<h1 class="main-header">📊 BrightData Snapshot Viewer</h1>', unsafe_allow_html=True)
@@ -285,6 +307,31 @@ def main():
             help="Number of records requested"
         )
         
+        # Filter criteria input
+        st.write("**Filter Criteria (Optional)**")
+        filter_description = st.text_input(
+            "Description",
+            placeholder="e.g., High rating products with free shipping",
+            help="Brief description of what this snapshot contains"
+        )
+        
+        # Allow users to input filter criteria as JSON
+        filter_criteria_input = st.text_area(
+            "Filter Criteria (JSON format)",
+            placeholder='{"rating": {"$gte": 4.0}, "delivery": {"$includes": "FREE"}}',
+            help="Enter the filter criteria used to create this snapshot in JSON format"
+        )
+        
+        # Parse and validate JSON input
+        parsed_filters = None
+        if filter_criteria_input.strip():
+            try:
+                parsed_filters = json.loads(filter_criteria_input)
+                st.success("✅ Valid JSON format")
+            except json.JSONDecodeError as e:
+                st.error(f"❌ Invalid JSON: {e}")
+                parsed_filters = None
+        
         col1, col2 = st.columns(2)
         with col1:
             if st.form_submit_button("➕ Add Snapshot"):
@@ -298,8 +345,9 @@ def main():
                         'status': 'submitted',  # Default to submitted status
                         'filter_criteria': {
                             'manual_entry': True,
-                            'description': 'Manually added snapshot',
-                            'filters': []
+                            'description': filter_description or 'Manually added snapshot',
+                            'filters': parsed_filters if parsed_filters else [],
+                            'original_criteria': filter_criteria_input if filter_criteria_input.strip() else None
                         },
                         'metadata': {
                             'cost': None,
@@ -332,6 +380,34 @@ def main():
                             st.sidebar.error("❌ Failed to update status")
                 else:
                     st.sidebar.error("❌ Please enter both Snapshot ID and Dataset ID")
+    
+    # Add a section to try retrieving filter details from API
+    st.sidebar.divider()
+    st.sidebar.subheader("🔍 Retrieve Filter Details")
+    
+    with st.sidebar.form("retrieve_filter_form"):
+        retrieve_snapshot_id = st.text_input(
+            "Snapshot ID to retrieve filters",
+            placeholder="e.g., snap_abc123...",
+            help="Enter a snapshot ID to try retrieving filter details from API"
+        )
+        retrieve_dataset_id = st.text_input(
+            "Dataset ID",
+            placeholder="e.g., gd_l7q7dkf244hwjntr0",
+            help="Dataset ID for the snapshot"
+        )
+        
+        if st.form_submit_button("🔍 Retrieve Filter Details"):
+            if retrieve_snapshot_id and retrieve_dataset_id:
+                with st.spinner("Retrieving filter details..."):
+                    filter_details = get_snapshot_filter_details(retrieve_snapshot_id, retrieve_dataset_id)
+                    if filter_details:
+                        st.sidebar.success("✅ Filter details retrieved!")
+                        st.sidebar.json(filter_details)
+                    else:
+                        st.sidebar.warning("⚠️ No filter details found in API response")
+            else:
+                st.sidebar.error("❌ Please enter both Snapshot ID and Dataset ID")
     
     st.sidebar.divider()
     
@@ -488,11 +564,20 @@ def main():
                 st.info("📝 **Manually Added Snapshot**")
                 st.write(f"**Description:** {filter_criteria.get('description', 'No description')}")
                 st.write(f"**Entry Type:** Manual addition")
+                
+                # Show parsed filters if available
                 if filter_criteria.get('filters'):
-                    st.write("**Filters:**")
+                    st.write("**Parsed Filters:**")
                     st.json(filter_criteria['filters'])
                 else:
-                    st.write("**Filters:** No filter criteria available")
+                    st.write("**Parsed Filters:** No filter criteria available")
+                
+                # Show original criteria if available
+                if filter_criteria.get('original_criteria'):
+                    st.write("**Original Filter Criteria:**")
+                    st.code(filter_criteria['original_criteria'], language='json')
+                else:
+                    st.write("**Original Filter Criteria:** Not provided")
             else:
                 st.json(filter_criteria)
         else:
