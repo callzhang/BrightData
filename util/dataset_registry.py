@@ -5,7 +5,7 @@ This module provides a centralized registry for different datasets, their schema
 and field definitions to support multi-dataset filtering.
 """
 
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any, Optional, Union
 from dataclasses import dataclass
 from enum import Enum
 
@@ -389,9 +389,31 @@ def get_dataset_schema(dataset_id: str) -> Optional[DatasetSchema]:
     return dataset_registry.get_dataset(dataset_id)
 
 
-def list_available_datasets() -> List[DatasetSchema]:
-    """List all available datasets"""
-    return dataset_registry.list_datasets()
+def list_available_datasets(include_names: bool = False) -> Union[List[DatasetSchema], Dict[str, Any]]:
+    """
+    List all available datasets with optional name mapping
+    
+    Args:
+        include_names: If True, returns a dictionary with both schemas and name mappings
+        
+    Returns:
+        List of DatasetSchema objects, or dict with schemas and names if include_names=True
+    """
+    schemas = dataset_registry.list_datasets()
+    
+    if not include_names:
+        return schemas
+    
+    # Return comprehensive dataset information
+    return {
+        "schemas": schemas,
+        "names": DATASET_NAMES.copy(),
+        "summary": {
+            "total_datasets": len(schemas),
+            "total_name_aliases": len(DATASET_NAMES),
+            "available_names": list(DATASET_NAMES.keys())
+        }
+    }
 
 
 def get_field_reference(dataset_id: str) -> Dict[str, str]:
@@ -439,3 +461,13 @@ def list_dataset_names() -> Dict[str, str]:
         Dictionary mapping user-friendly names to dataset IDs
     """
     return DATASET_NAMES.copy()
+
+
+def list_datasets_comprehensive() -> Dict[str, Any]:
+    """
+    Get comprehensive dataset information including schemas, names, and summary
+    
+    Returns:
+        Dictionary with schemas, names, and summary information
+    """
+    return list_available_datasets(include_names=True)

@@ -78,6 +78,7 @@ __all__ = [
     'validate_field_operator',
     'get_dataset_id',
     'list_dataset_names',
+    'list_datasets_comprehensive',
     # Direct callable fields (backward compatibility)
     'TITLE', 'ASIN', 'BRAND', 'DESCRIPTION', 'CATEGORIES',
     'INITIAL_PRICE', 'FINAL_PRICE', 'CURRENCY', 'DISCOUNT',

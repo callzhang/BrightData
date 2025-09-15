@@ -128,7 +128,7 @@ class SnapshotManager:
             dataset_id = record["dataset_id"]
             
             # Initialize filter for API calls
-            filter_obj = BrightDataFilter(self.api_key, dataset_id, str(self.storage_dir))
+            filter_obj = BrightDataFilter(dataset_id, str(self.storage_dir), self.api_key)
             
             # Get current metadata
             metadata = filter_obj.get_snapshot_metadata(snapshot_id)

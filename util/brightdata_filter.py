@@ -167,16 +167,21 @@ class BrightDataFilter:
     supporting all available operators and field types from the BrightData API.
     """
     
-    def __init__(self, api_key: str, dataset: str = "amazon_products", storage_dir: str = "snapshot_records"):
+    def __init__(self, dataset: str = "amazon_products", storage_dir: str = "snapshot_records", api_key: str = None):
         """
         Initialize the BrightData database connection.
         
         Args:
-            api_key: BrightData API key
             dataset: Dataset name (e.g., 'amazon_products', 'amazon', 'shopee') or dataset ID
             storage_dir: Directory to store snapshot records (default: "snapshot_records")
+            api_key: BrightData API key (optional, will load from secrets if not provided)
         """
-        self.api_key = api_key
+        # Load API key from secrets if not provided
+        if api_key is None:
+            from .config import get_brightdata_api_key
+            self.api_key = get_brightdata_api_key()
+        else:
+            self.api_key = api_key
         
         # Convert dataset name to ID if needed
         try:
@@ -205,19 +210,19 @@ class BrightDataFilter:
         return [schema.dataset_id for schema in list_available_datasets()]
     
     @classmethod
-    def amazon_products(cls, api_key: str, storage_dir: str = "snapshot_records"):
+    def amazon_products(cls, storage_dir: str = "snapshot_records", api_key: str = None):
         """Convenience method to create BrightData connection for Amazon Products dataset"""
-        return cls(api_key, "amazon_products", storage_dir)
+        return cls("amazon_products", storage_dir, api_key)
     
     @classmethod
-    def amazon_walmart(cls, api_key: str, storage_dir: str = "snapshot_records"):
+    def amazon_walmart(cls, storage_dir: str = "snapshot_records", api_key: str = None):
         """Convenience method to create BrightData connection for Amazon-Walmart dataset"""
-        return cls(api_key, "amazon_walmart", storage_dir)
+        return cls("amazon_walmart", storage_dir, api_key)
     
     @classmethod
-    def shopee(cls, api_key: str, storage_dir: str = "snapshot_records"):
+    def shopee(cls, storage_dir: str = "snapshot_records", api_key: str = None):
         """Convenience method to create BrightData connection for Shopee dataset"""
-        return cls(api_key, "shopee", storage_dir)
+        return cls("shopee", storage_dir, api_key)
     
     def create_filter(self, 
                      name: str, 
@@ -585,18 +590,53 @@ class BrightDataFilter:
         }
     
     @staticmethod
-    def list_available_datasets() -> List[Dict[str, Any]]:
-        """List all available datasets"""
+    def list_available_datasets(include_names: bool = False) -> Union[List[Dict[str, Any]], Dict[str, Any]]:
+        """
+        List all available datasets with optional name mappings
+        
+        Args:
+            include_names: If True, includes dataset name mappings and comprehensive info
+            
+        Returns:
+            List of dataset info dicts, or comprehensive dict if include_names=True
+        """
         from .dataset_registry import list_available_datasets
-        return [
-            {
-                "dataset_id": schema.dataset_id,
-                "name": schema.name,
-                "description": schema.description,
-                "field_count": len(schema.fields)
+        
+        if include_names:
+            # Return comprehensive information
+            comprehensive = list_available_datasets(include_names=True)
+            
+            # Add formatted dataset info
+            formatted_datasets = []
+            for schema in comprehensive["schemas"]:
+                formatted_datasets.append({
+                    "dataset_id": schema.dataset_id,
+                    "name": schema.name,
+                    "description": schema.description,
+                    "field_count": len(schema.fields),
+                    "available_aliases": [
+                        name for name, dataset_id in comprehensive["names"].items() 
+                        if dataset_id == schema.dataset_id
+                    ]
+                })
+            
+            return {
+                "datasets": formatted_datasets,
+                "names": comprehensive["names"],
+                "summary": comprehensive["summary"]
             }
-            for schema in list_available_datasets()
-        ]
+        else:
+            # Return simple list
+            datasets = list_available_datasets()
+            return [
+                {
+                    "dataset_id": schema.dataset_id,
+                    "name": schema.name,
+                    "description": schema.description,
+                    "field_count": len(schema.fields)
+                }
+                for schema in datasets
+            ]
 
 
 # Utility functions for filter management
