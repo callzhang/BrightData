@@ -341,114 +341,94 @@ def main():
             placeholder="e.g., snap_abc123...",
             help="Enter a snapshot ID to add manually"
         )
-        manual_dataset_id = st.text_input(
-            "Dataset ID (optional)", 
-            placeholder="e.g., gd_l7q7dkf244hwjntr0",
-            help="Dataset ID for the snapshot"
-        )
-        manual_records_limit = st.number_input(
-            "Records Limit", 
-            min_value=1, 
-            value=1000,
-            help="Number of records requested"
-        )
-        
-        # Filter criteria input
-        st.write("**Filter Criteria (Optional)**")
-        filter_description = st.text_input(
-            "Description",
-            placeholder="e.g., High rating products with free shipping",
-            help="Brief description of what this snapshot contains"
-        )
-        
-        # Allow users to input filter criteria as JSON
-        filter_criteria_input = st.text_area(
-            "Filter Criteria (JSON format)",
-            placeholder='{"rating": {"$gte": 4.0}, "delivery": {"$includes": "FREE"}}',
-            help="Enter the filter criteria used to create this snapshot in JSON format"
-        )
-        
-        # Parse and validate JSON input
-        parsed_filters = None
-        if filter_criteria_input.strip():
-            try:
-                parsed_filters = json.loads(filter_criteria_input)
-                st.success("✅ Valid JSON format")
-            except json.JSONDecodeError as e:
-                st.error(f"❌ Invalid JSON: {e}")
-                parsed_filters = None
         
         col1, col2 = st.columns(2)
         with col1:
             if st.form_submit_button("➕ Add Snapshot"):
                 if manual_snapshot_id:
-                    # Create a basic record for the manual snapshot
-                    manual_record = {
-                        'snapshot_id': manual_snapshot_id,
-                        'dataset_id': manual_dataset_id or 'unknown',
-                        'records_limit': manual_records_limit,
-                        'submission_time': datetime.now().isoformat(),
-                        'status': 'submitted',  # Default to submitted status
-                        'filter_criteria': {
-                            'manual_entry': True,
-                            'description': filter_description or 'Manually added snapshot',
-                            'filters': parsed_filters if parsed_filters else [],
-                            'original_criteria': filter_criteria_input if filter_criteria_input.strip() else None
-                        },
-                        'metadata': {
-                            'cost': None,
-                            'delivery_url': None,
-                            'download_url': None,
-                            'status': 'submitted'
-                        }
-                    }
-                    
-                    # Save the manual record
-                    record_file = Path("snapshot_records") / f"{manual_snapshot_id}.json"
-                    try:
-                        with open(record_file, 'w') as f:
-                            json.dump(manual_record, f, indent=2)
-                        st.sidebar.success(f"✅ Added snapshot: {manual_snapshot_id[:12]}...")
-                        st.rerun()
-                    except Exception as e:
-                        st.sidebar.error(f"❌ Error adding snapshot: {e}")
+                    # Try to get metadata from API first
+                    with st.spinner("Retrieving snapshot details..."):
+                        metadata = get_snapshot_metadata(manual_snapshot_id)
+                        
+                        if metadata:
+                            # Create record with API metadata
+                            manual_record = {
+                                'snapshot_id': manual_snapshot_id,
+                                'dataset_id': metadata.get('dataset_id', 'unknown'),
+                                'records_limit': metadata.get('dataset_size', 1000),
+                                'submission_time': datetime.now().isoformat(),
+                                'created_time': metadata.get('created'),
+                                'status': metadata.get('status', 'unknown'),
+                                'dataset_size': metadata.get('dataset_size'),
+                                'file_size': metadata.get('file_size'),
+                                'cost': metadata.get('cost'),
+                                'filter_criteria': {
+                                    'manual_entry': True,
+                                    'description': 'Manually added snapshot',
+                                    'filters': [],
+                                    'original_criteria': None,
+                                    'api_retrieved': True
+                                },
+                                'metadata': metadata
+                            }
+                            st.sidebar.success("✅ Retrieved details from API!")
+                        else:
+                            # Create basic record if API fails
+                            manual_record = {
+                                'snapshot_id': manual_snapshot_id,
+                                'dataset_id': 'unknown',
+                                'records_limit': 1000,
+                                'submission_time': datetime.now().isoformat(),
+                                'status': 'unknown',
+                                'filter_criteria': {
+                                    'manual_entry': True,
+                                    'description': 'Manually added snapshot',
+                                    'filters': [],
+                                    'original_criteria': None,
+                                    'api_retrieved': False
+                                },
+                                'metadata': {
+                                    'cost': None,
+                                    'delivery_url': None,
+                                    'download_url': None,
+                                    'status': 'unknown'
+                                }
+                            }
+                            st.sidebar.warning("⚠️ Could not retrieve from API, created basic record")
+                        
+                        # Save the manual record
+                        record_file = Path("snapshot_records") / f"{manual_snapshot_id}.json"
+                        try:
+                            with open(record_file, 'w') as f:
+                                json.dump(manual_record, f, indent=2)
+                            st.sidebar.success(f"✅ Added snapshot: {manual_snapshot_id[:12]}...")
+                            st.rerun()
+                        except Exception as e:
+                            st.sidebar.error(f"❌ Error adding snapshot: {e}")
                 else:
                     st.sidebar.error("❌ Please enter a snapshot ID")
         
         with col2:
-            if st.form_submit_button("🔄 Update Status"):
+            if st.form_submit_button("🔍 Retrieve Details"):
                 if manual_snapshot_id:
-                    with st.spinner("Updating status..."):
-                        if update_manual_snapshot_status(manual_snapshot_id):
-                            st.sidebar.success(f"✅ Updated status for: {manual_snapshot_id[:12]}...")
-                            st.rerun()
+                    with st.spinner("Retrieving details..."):
+                        # Try to get filter details
+                        filter_details = get_snapshot_filter_details(manual_snapshot_id)
+                        metadata = get_snapshot_metadata(manual_snapshot_id)
+                        
+                        if metadata:
+                            st.sidebar.success("✅ Retrieved metadata!")
+                            st.sidebar.json(metadata)
                         else:
-                            st.sidebar.error("❌ Failed to update status")
+                            st.sidebar.warning("⚠️ No metadata found")
+                        
+                        if filter_details:
+                            st.sidebar.success("✅ Filter details found!")
+                            st.sidebar.json(filter_details)
+                        else:
+                            st.sidebar.info("ℹ️ No filter details in API response")
                 else:
                     st.sidebar.error("❌ Please enter Snapshot ID")
-    
-    # Add a section to try retrieving filter details from API
-    st.sidebar.divider()
-    st.sidebar.subheader("🔍 Retrieve Filter Details")
-    
-    with st.sidebar.form("retrieve_filter_form"):
-        retrieve_snapshot_id = st.text_input(
-            "Snapshot ID to retrieve filters",
-            placeholder="e.g., snap_abc123...",
-            help="Enter a snapshot ID to try retrieving filter details from API"
-        )
-        
-        if st.form_submit_button("🔍 Retrieve Filter Details"):
-            if retrieve_snapshot_id:
-                with st.spinner("Retrieving filter details..."):
-                    filter_details = get_snapshot_filter_details(retrieve_snapshot_id)
-                    if filter_details:
-                        st.sidebar.success("✅ Filter details retrieved!")
-                        st.sidebar.json(filter_details)
-                    else:
-                        st.sidebar.warning("⚠️ No filter details found in API response")
-            else:
-                st.sidebar.error("❌ Please enter Snapshot ID")
     
     st.sidebar.divider()
     
@@ -605,6 +585,12 @@ def main():
                 st.info("📝 **Manually Added Snapshot**")
                 st.write(f"**Description:** {filter_criteria.get('description', 'No description')}")
                 st.write(f"**Entry Type:** Manual addition")
+                
+                # Show API retrieval status
+                if filter_criteria.get('api_retrieved'):
+                    st.success("✅ **Details retrieved from API**")
+                else:
+                    st.warning("⚠️ **Basic record created** (API retrieval failed)")
                 
                 # Show parsed filters if available
                 if filter_criteria.get('filters'):
