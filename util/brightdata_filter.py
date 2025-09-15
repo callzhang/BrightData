@@ -203,6 +203,10 @@ class BrightDataFilter:
         self.schema = get_dataset_schema(self.dataset_id)
         if not self.schema:
             raise ValueError(f"Unknown dataset ID: {self.dataset_id}. Available datasets: {self._get_available_datasets()}")
+        
+        # Create filter fields for this dataset
+        from .filter_criteria import DatasetFilterFields
+        self.filter = DatasetFilterFields(self.dataset_id)
     
     def _get_available_datasets(self) -> List[str]:
         """Get list of available dataset IDs"""

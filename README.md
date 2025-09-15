@@ -23,25 +23,25 @@ pip install -r requirements.txt  # If requirements.txt exists
 ## ⚡ Quick Start
 
 ```python
-from util import BrightDataFilter, AMAZON_FIELDS as AF
+from util import BrightDataFilter
 
 # Method 1: Using dataset name (recommended) - API key loaded automatically
-brightdata = BrightDataFilter("amazon_products")
+amazon_products = BrightDataFilter("amazon_products")
 
 # Method 2: Using convenience class method - API key loaded automatically
-brightdata = BrightDataFilter.amazon_products()
+amazon_products = BrightDataFilter.amazon_products()
 
 # Method 3: Using dataset ID (still supported)
-brightdata = BrightDataFilter("gd_l7q7dkf244hwjntr0")
+amazon_products = BrightDataFilter("gd_l7q7dkf244hwjntr0")
 
 # Method 4: Custom API key (optional)
-brightdata = BrightDataFilter("amazon_products", api_key="your_custom_key")
+amazon_products = BrightDataFilter("amazon_products", api_key="your_custom_key")
 
-# Create a simple database query using dataset-specific fields
-high_rated_products = AF.rating >= 4.5
+# Create a simple database query using the dataset's filter fields
+high_rated_products = amazon_products.filter.rating >= 4.5
 
 # Execute the database query
-result = brightdata.search_data(high_rated_products, records_limit=1000)
+result = amazon_products.search_data(high_rated_products, records_limit=1000)
 print(f"Found products with snapshot ID: {result['snapshot_id']}")
 ```
 
@@ -66,14 +66,19 @@ print(list_dataset_names())
 # Output: {'amazon_products': 'gd_l7q7dkf244hwjntr0', 'amazon': 'gd_l7q7dkf244hwjntr0', ...}
 
 # Access datasets by name (recommended) - API key loaded automatically
-brightdata = BrightDataFilter("amazon_products")
-brightdata = BrightDataFilter("amazon_walmart") 
-brightdata = BrightDataFilter("shopee")
+amazon_products = BrightDataFilter("amazon_products")
+amazon_walmart = BrightDataFilter("amazon_walmart") 
+shopee = BrightDataFilter("shopee")
 
 # Or use convenience methods - API key loaded automatically
-brightdata = BrightDataFilter.amazon_products()
-brightdata = BrightDataFilter.amazon_walmart()
-brightdata = BrightDataFilter.shopee()
+amazon_products = BrightDataFilter.amazon_products()
+amazon_walmart = BrightDataFilter.amazon_walmart()
+shopee = BrightDataFilter.shopee()
+
+# Each dataset provides its own filter fields
+amazon_query = amazon_products.filter.rating >= 4.5
+walmart_query = amazon_walmart.filter.price_difference > 10
+shopee_query = shopee.filter.rating >= 4.0
 ```
 
 **Available Dataset Names:**
@@ -86,7 +91,7 @@ Local snapshot records are stored in `snapshot_records/` by default. You can cus
 
 ```python
 # Custom storage directory
-brightdata = BrightDataFilter("amazon_products", "my_snapshots")
+amazon_products = BrightDataFilter("amazon_products", "my_snapshots")
 ```
 
 ## 📋 Table of Contents
@@ -106,27 +111,27 @@ brightdata = BrightDataFilter("amazon_products", "my_snapshots")
 ## Quick Start
 
 ```python
-from util import BrightDataFilter, AMAZON_FIELDS as AF, AMAZON_WALMART_FIELDS as AW, SHOPEE_FIELDS as SF
+from util import BrightDataFilter
 
 # Initialize BrightData database connections for different datasets
 # API keys are loaded automatically from secrets.yaml
 
 # Amazon Products dataset
-amazon_db = BrightDataFilter("amazon_products")
-amazon_query = AF.rating >= 4.5
+amazon_products = BrightDataFilter("amazon_products")
+amazon_query = amazon_products.filter.rating >= 4.5
 
 # Amazon-Walmart Comparison dataset  
-comparison_db = BrightDataFilter("amazon_walmart")
-comparison_query = AW.price_difference > 10
+amazon_walmart = BrightDataFilter("amazon_walmart")
+comparison_query = amazon_walmart.filter.price_difference > 10
 
 # Shopee Products dataset
-shopee_db = BrightDataFilter("shopee")
-shopee_query = SF.rating >= 4.0
+shopee = BrightDataFilter("shopee")
+shopee_query = shopee.filter.rating >= 4.0
 
 # Execute database queries
-amazon_result = amazon_db.search_data(amazon_query, records_limit=1000)
-comparison_result = comparison_db.search_data(comparison_query, records_limit=1000)
-shopee_result = shopee_db.search_data(shopee_query, records_limit=1000)
+amazon_result = amazon_products.search_data(amazon_query, records_limit=1000)
+comparison_result = amazon_walmart.search_data(comparison_query, records_limit=1000)
+shopee_result = shopee.search_data(shopee_query, records_limit=1000)
 ```
 
 ## Multi-Dataset Support
