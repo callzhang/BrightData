@@ -219,9 +219,9 @@ def main():
                 st.info("🔄 Refreshing...")
     
     # Create two-column layout
-    left_col, right_col = st.columns([2, 1])
+    left_col, right_col = st.columns([1, 2])
     
-    with right_col:
+    with left_col:
         st.subheader("📊 All Snapshots")
         
         # Status summary
@@ -279,7 +279,7 @@ def main():
                 
                 st.divider()
     
-    with left_col:
+    with right_col:
         # Get selected record (from session state or first record)
         if 'selected_snapshot' in st.session_state:
             selected_record = st.session_state['selected_snapshot']
