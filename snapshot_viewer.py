@@ -165,6 +165,35 @@ def delete_snapshot_record(snapshot_id):
         st.error(f"Error deleting snapshot: {e}")
         return False
 
+def update_manual_snapshot_status(snapshot_id, dataset_id):
+    """Update the status of a manually added snapshot."""
+    try:
+        # Initialize BrightData filter to check status
+        if dataset_id and dataset_id != 'unknown':
+            brightdata = BrightDataFilter(dataset_id)
+            metadata = brightdata.get_snapshot_metadata(snapshot_id)
+            
+            if metadata:
+                # Update the record with new status and metadata
+                record_file = Path("snapshot_records") / f"{snapshot_id}.json"
+                if record_file.exists():
+                    with open(record_file, 'r') as f:
+                        record = json.load(f)
+                    
+                    # Update status and metadata
+                    record['status'] = metadata.get('status', 'unknown')
+                    record['metadata'] = metadata
+                    
+                    # Save updated record
+                    with open(record_file, 'w') as f:
+                        json.dump(record, f, indent=2)
+                    
+                    return True
+        return False
+    except Exception as e:
+        st.error(f"Error updating snapshot status: {e}")
+        return False
+
 def main():
     # Header
     st.markdown('<h1 class="main-header">📊 BrightData Snapshot Viewer</h1>', unsafe_allow_html=True)
@@ -223,6 +252,73 @@ def main():
     if status_counts:
         status_text = " | ".join([f"{status}: {count}" for status, count in status_counts.items()])
         st.sidebar.caption(f"Status: {status_text}")
+    
+    # Manual snapshot ID input
+    st.sidebar.divider()
+    st.sidebar.subheader("➕ Add Snapshot Manually")
+    
+    with st.sidebar.form("add_snapshot_form"):
+        manual_snapshot_id = st.text_input(
+            "Snapshot ID", 
+            placeholder="e.g., snap_abc123...",
+            help="Enter a snapshot ID to add manually"
+        )
+        manual_dataset_id = st.text_input(
+            "Dataset ID (optional)", 
+            placeholder="e.g., gd_l7q7dkf244hwjntr0",
+            help="Dataset ID for the snapshot"
+        )
+        manual_records_limit = st.number_input(
+            "Records Limit", 
+            min_value=1, 
+            value=1000,
+            help="Number of records requested"
+        )
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.form_submit_button("➕ Add Snapshot"):
+                if manual_snapshot_id:
+                    # Create a basic record for the manual snapshot
+                    manual_record = {
+                        'snapshot_id': manual_snapshot_id,
+                        'dataset_id': manual_dataset_id or 'unknown',
+                        'records_limit': manual_records_limit,
+                        'submission_time': datetime.now().isoformat(),
+                        'status': 'unknown',
+                        'filter_criteria': {'manual_entry': True},
+                        'metadata': {
+                            'cost': None,
+                            'delivery_url': None,
+                            'download_url': None
+                        }
+                    }
+                    
+                    # Save the manual record
+                    record_file = Path("snapshot_records") / f"{manual_snapshot_id}.json"
+                    try:
+                        with open(record_file, 'w') as f:
+                            json.dump(manual_record, f, indent=2)
+                        st.sidebar.success(f"✅ Added snapshot: {manual_snapshot_id[:12]}...")
+                        st.rerun()
+                    except Exception as e:
+                        st.sidebar.error(f"❌ Error adding snapshot: {e}")
+                else:
+                    st.sidebar.error("❌ Please enter a snapshot ID")
+        
+        with col2:
+            if st.form_submit_button("🔄 Update Status"):
+                if manual_snapshot_id and manual_dataset_id:
+                    with st.spinner("Updating status..."):
+                        if update_manual_snapshot_status(manual_snapshot_id, manual_dataset_id):
+                            st.sidebar.success(f"✅ Updated status for: {manual_snapshot_id[:12]}...")
+                            st.rerun()
+                        else:
+                            st.sidebar.error("❌ Failed to update status")
+                else:
+                    st.sidebar.error("❌ Please enter both Snapshot ID and Dataset ID")
+    
+    st.sidebar.divider()
     
     # Display all snapshots in sidebar
     for i, record in enumerate(records):
@@ -303,23 +399,18 @@ def main():
                         st.info("ℹ️ No status updates needed")
         
         with col2_2:
-            # Show auto-refresh status with live countdown
+            # Show auto-refresh status with countdown
             time_since_refresh = current_time - st.session_state['last_refresh']
             time_until_next = 30 - time_since_refresh
             
-            # Use placeholder for live countdown
-            countdown_placeholder = st.empty()
-            
             if time_until_next > 0:
-                countdown_placeholder.info(f"🔄 Next refresh: {int(time_until_next)}s")
-                # Auto-refresh every second to update countdown
-                time.sleep(1)
-                st.rerun()
+                st.info(f"🔄 Next refresh: {int(time_until_next)}s")
             else:
-                countdown_placeholder.info("🔄 Refreshing...")
-                # Trigger refresh
-                st.session_state['last_refresh'] = current_time
-                st.rerun()
+                st.info("🔄 Ready to refresh")
+                # Auto-refresh when countdown reaches 0
+                if st.button("🔄 Auto Refresh", help="Check status of all snapshots"):
+                    st.session_state['last_refresh'] = current_time
+                    st.rerun()
     
     # Main content area
     # Get selected record (from session state or first record)
