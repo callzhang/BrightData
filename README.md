@@ -895,6 +895,22 @@ The deduplication system uses:
 - **Sorting Algorithm**: Ensures order-independent matching
 - **Metadata Tracking**: Stores submission time, status, and costs
 
+## Web UI - Snapshot Viewer
+
+For an intuitive, point-and-click interface to view and analyze your snapshots:
+
+```bash
+# Launch the web interface
+python launch_viewer.py
+```
+
+The **Snapshot Viewer** provides:
+- 📊 **Interactive Dashboard**: View all snapshots with status tracking
+- 📈 **Data Analysis**: Automatic statistical summaries and visualizations  
+- 🔍 **Data Exploration**: Browse data with professional charts and tables
+- 📱 **Mobile Friendly**: Works on any device with a web browser
+- 🎨 **Visual Status**: Color-coded status badges and metrics
+
 ## Snapshot Management
 
 After submitting filters, use the **Snapshot Manager** to track progress and handle downloads:
