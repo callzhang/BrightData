@@ -211,32 +211,38 @@ def main():
         if date != 'Unknown date':
             try:
                 date_obj = datetime.fromisoformat(date.replace('Z', '+00:00'))
-                date_str = date_obj.strftime('%m-%d %H:%M')
+                date_str = date_obj.strftime('%Y-%m-%d %H:%M:%S')
             except:
-                date_str = date[:10] if len(date) > 10 else date
+                date_str = date
         else:
             date_str = 'Unknown'
         
-        # Create a clickable card for each snapshot in sidebar
+        # Get filter count
+        filter_criteria = record.get('filter_criteria', {})
+        filter_count = 0
+        if filter_criteria:
+            if 'filters' in filter_criteria:
+                filter_count = len(filter_criteria['filters'])
+            else:
+                filter_count = 1
+        
+        # Get records limit
+        records_limit = record.get('records_limit', 'N/A')
+        
+        # Create clickable card for each snapshot in sidebar
+        card_style = ""
         if is_selected:
-            st.sidebar.markdown("""
-            <div style="background-color: #e3f2fd; padding: 0.5rem; border-radius: 0.25rem; border-left: 3px solid #2196f3; margin: 0.25rem 0;">
-            """, unsafe_allow_html=True)
+            card_style = "background-color: #e3f2fd; border-left: 3px solid #2196f3;"
         
-        col1, col2 = st.sidebar.columns([3, 1])
-        
-        with col1:
-            st.sidebar.write(f"**{record['snapshot_id'][:12]}...**")
-            st.sidebar.caption(f"{date_str}")
-            st.sidebar.markdown(get_snapshot_status_badge(status), unsafe_allow_html=True)
-        
-        with col2:
-            if st.sidebar.button("📋", key=f"select_{i}", help="Select this snapshot"):
-                st.session_state['selected_snapshot'] = record
-                st.rerun()
-        
-        if is_selected:
-            st.sidebar.markdown("</div>", unsafe_allow_html=True)
+        # Make the whole area clickable
+        if st.sidebar.button(
+            f"[{status.upper()}] {record['snapshot_id'][:12]}...\n[{records_limit} Records] {filter_count} filters\n{date_str}",
+            key=f"select_{i}",
+            help="Click to select this snapshot",
+            use_container_width=True
+        ):
+            st.session_state['selected_snapshot'] = record
+            st.rerun()
         
         st.sidebar.divider()
     
@@ -289,11 +295,11 @@ def main():
         st.metric("📊 Total Snapshots", len(records))
     
     with col2:
-        completed_count = sum(1 for r in records if r.get('status') == 'completed')
+        completed_count = sum(1 for r in records if r.get('status') in ['completed', 'ready'])
         st.metric("✅ Completed", completed_count)
     
     with col3:
-        processing_count = sum(1 for r in records if r.get('status') in ['submitted', 'processing'])
+        processing_count = sum(1 for r in records if r.get('status') in ['submitted', 'processing', 'building'])
         st.metric("⏳ Processing", processing_count)
     
     with col4:
@@ -302,10 +308,8 @@ def main():
     
     st.divider()
     
-    # Selected Snapshot Details
-    st.header(f"📋 Snapshot Details: {snapshot_id}")
-    
-    col1, col2 = st.columns([2, 1])
+    # Selected Snapshot Details - Basic Information and Filter Criteria side by side
+    col1, col2 = st.columns([1, 1])
     
     with col1:
         # Basic info
@@ -327,13 +331,24 @@ def main():
                 st.write(f"**{key}:** {value}")
     
     with col2:
-        # Actions
-        st.subheader("🛠️ Actions")
-        
-        # Check if data is available
-        data_file = Path("downloads") / f"{snapshot_id}.json"
-        data_available = data_file.exists()
-        
+        # Filter Criteria
+        st.subheader("🔍 Filter Criteria")
+        filter_criteria = selected_record.get('filter_criteria', {})
+        if filter_criteria:
+            st.json(filter_criteria)
+        else:
+            st.info("No filter criteria available")
+    
+    # Actions section below the two sections
+    st.subheader("🛠️ Actions")
+    
+    # Check if data is available
+    data_file = Path("downloads") / f"{snapshot_id}.json"
+    data_available = data_file.exists()
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
         if data_available:
             st.success("✅ Data available for analysis")
             
@@ -341,7 +356,9 @@ def main():
                 st.session_state['view_data'] = True
         else:
             st.warning("⚠️ Data not downloaded yet")
-            
+    
+    with col2:
+        if not data_available:
             if st.button("📥 Download Data"):
                 try:
                     # Initialize BrightData filter
@@ -358,14 +375,6 @@ def main():
                         st.error("No dataset ID found in record")
                 except Exception as e:
                     st.error(f"Error: {e}")
-    
-    # Filter Criteria
-    st.subheader("🔍 Filter Criteria")
-    filter_criteria = selected_record.get('filter_criteria', {})
-    if filter_criteria:
-        st.json(filter_criteria)
-    else:
-        st.info("No filter criteria available")
     
     # Data Analysis (if data is available and requested)
     if st.session_state.get('view_data', False) and data_available:
