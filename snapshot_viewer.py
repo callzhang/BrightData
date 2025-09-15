@@ -78,6 +78,46 @@ def load_snapshot_records():
     
     return sorted(records, key=lambda x: x.get('submission_time', ''), reverse=True)
 
+def check_snapshot_status(snapshot_id, dataset_id):
+    """Check the current status of a snapshot from the API."""
+    try:
+        brightdata = BrightDataFilter(dataset_id)
+        metadata = brightdata.get_snapshot_metadata(snapshot_id)
+        return metadata
+    except Exception as e:
+        print(f"Error checking status for {snapshot_id}: {e}")
+        return None
+
+def update_snapshot_status(record):
+    """Update the status of a snapshot record if it's not completed."""
+    current_status = record.get('status', 'unknown')
+    
+    # Only check status for non-completed snapshots
+    if current_status in ['submitted', 'processing', 'scheduled']:
+        try:
+            metadata = check_snapshot_status(record['snapshot_id'], record.get('dataset_id'))
+            if metadata:
+                new_status = metadata.get('status', current_status)
+                
+                # Only update if status actually changed
+                if new_status != current_status:
+                    # Update the record with new status
+                    record['status'] = new_status
+                    record['metadata'] = metadata
+                    if metadata.get('completion_time'):
+                        record['completion_time'] = metadata['completion_time']
+                    
+                    # Save updated record back to file
+                    with open(record['file_path'], 'w') as f:
+                        json.dump(record, f, indent=2)
+                    
+                    return True
+        except Exception as e:
+            # Don't print errors to avoid cluttering the UI
+            pass
+    
+    return False
+
 def get_snapshot_status_badge(status):
     """Get a styled status badge."""
     status_colors = {
@@ -112,35 +152,123 @@ def main():
         st.info("💡 Use the demo.ipynb notebook to submit filters and create snapshots.")
         return
     
-    # Sidebar - Snapshot Selection
-    st.sidebar.header("📋 Select Snapshot")
-    
-    # Create snapshot options with status and date
-    snapshot_options = []
-    for record in records:
-        status = record.get('status', 'unknown')
-        date = record.get('submission_time', 'Unknown date')
-        if date != 'Unknown date':
-            try:
-                date_obj = datetime.fromisoformat(date.replace('Z', '+00:00'))
-                date_str = date_obj.strftime('%Y-%m-%d %H:%M')
-            except:
-                date_str = date
-        else:
-            date_str = date
+    # Auto-check status for non-completed snapshots (only on first load)
+    if 'status_checked' not in st.session_state:
+        with st.spinner("🔄 Checking snapshot statuses..."):
+            updated_count = 0
+            for record in records:
+                if update_snapshot_status(record):
+                    updated_count += 1
             
-        option_text = f"{record['snapshot_id']} - {status.upper()} ({date_str})"
-        snapshot_options.append((option_text, record))
+            if updated_count > 0:
+                st.success(f"✅ Auto-updated {updated_count} snapshot statuses")
+                st.rerun()
+        
+        st.session_state['status_checked'] = True
     
-    selected_option = st.sidebar.selectbox(
-        "Choose a snapshot:",
-        options=[opt[0] for opt in snapshot_options],
-        index=0
-    )
+    # Auto-refresh and status checking
+    col1, col2 = st.columns([3, 1])
     
-    # Get selected record
-    selected_record = next(opt[1] for opt in snapshot_options if opt[0] == selected_option)
-    snapshot_id = selected_record['snapshot_id']
+    with col1:
+        st.subheader("📋 Snapshot List")
+    
+    with col2:
+        col2_1, col2_2 = st.columns(2)
+        
+        with col2_1:
+            if st.button("🔄 Refresh", help="Check status of all non-completed snapshots"):
+                with st.spinner("Checking snapshot statuses..."):
+                    updated_count = 0
+                    for record in records:
+                        if update_snapshot_status(record):
+                            updated_count += 1
+                    
+                    if updated_count > 0:
+                        st.success(f"✅ Updated {updated_count} snapshot statuses")
+                        st.rerun()
+                    else:
+                        st.info("ℹ️ No status updates needed")
+        
+        with col2_2:
+            # Auto-refresh toggle
+            auto_refresh = st.checkbox("🔄 Auto", help="Auto-refresh every 30 seconds", value=False)
+            
+            if auto_refresh:
+                # Auto-refresh every 30 seconds
+                import time
+                time.sleep(30)
+                st.rerun()
+    
+    # Create two-column layout
+    left_col, right_col = st.columns([2, 1])
+    
+    with right_col:
+        st.subheader("📊 All Snapshots")
+        
+        # Status summary
+        status_counts = {}
+        for record in records:
+            status = record.get('status', 'unknown')
+            status_counts[status] = status_counts.get(status, 0) + 1
+        
+        # Display status summary
+        if status_counts:
+            status_text = " | ".join([f"{status}: {count}" for status, count in status_counts.items()])
+            st.caption(f"Status: {status_text}")
+        
+        st.divider()
+        
+        # Display all snapshots in a compact list
+        for i, record in enumerate(records):
+            status = record.get('status', 'unknown')
+            date = record.get('submission_time', 'Unknown date')
+            is_selected = st.session_state.get('selected_snapshot', {}).get('snapshot_id') == record['snapshot_id']
+            
+            if date != 'Unknown date':
+                try:
+                    date_obj = datetime.fromisoformat(date.replace('Z', '+00:00'))
+                    date_str = date_obj.strftime('%m-%d %H:%M')
+                except:
+                    date_str = date[:10] if len(date) > 10 else date
+            else:
+                date_str = 'Unknown'
+            
+            # Create a clickable card for each snapshot
+            with st.container():
+                # Highlight selected snapshot
+                if is_selected:
+                    st.markdown("""
+                    <div style="background-color: #e3f2fd; padding: 0.5rem; border-radius: 0.25rem; border-left: 3px solid #2196f3;">
+                    """, unsafe_allow_html=True)
+                
+                col1, col2, col3 = st.columns([2, 1, 1])
+                
+                with col1:
+                    st.write(f"**{record['snapshot_id'][:12]}...**")
+                    st.caption(f"{date_str}")
+                
+                with col2:
+                    st.markdown(get_snapshot_status_badge(status), unsafe_allow_html=True)
+                
+                with col3:
+                    if st.button("📋", key=f"select_{i}", help="Select this snapshot"):
+                        st.session_state['selected_snapshot'] = record
+                        st.rerun()
+                
+                if is_selected:
+                    st.markdown("</div>", unsafe_allow_html=True)
+                
+                st.divider()
+    
+    with left_col:
+        # Get selected record (from session state or first record)
+        if 'selected_snapshot' in st.session_state:
+            selected_record = st.session_state['selected_snapshot']
+        else:
+            selected_record = records[0]
+            st.session_state['selected_snapshot'] = selected_record
+        
+        snapshot_id = selected_record['snapshot_id']
     
     # Main content area
     col1, col2, col3, col4 = st.columns(4)
