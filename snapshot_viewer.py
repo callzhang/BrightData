@@ -228,7 +228,7 @@ def get_snapshot_metadata(snapshot_id):
     This is a utility function that doesn't require a dataset ID.
     """
     try:
-        from .config import get_brightdata_api_key
+        from util.config import get_brightdata_api_key
         api_key = get_brightdata_api_key()
         
         headers = {
