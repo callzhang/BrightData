@@ -13,7 +13,7 @@ from datetime import datetime
 from typing import Dict, List, Any, Optional, Union
 from dataclasses import dataclass
 from enum import Enum
-from .dataset_registry import get_dataset_schema, validate_field_operator
+from .dataset_registry import get_dataset_schema, validate_field_operator, get_dataset_id
 
 
 class FilterOperator(Enum):
@@ -167,17 +167,23 @@ class BrightDataFilter:
     supporting all available operators and field types from the BrightData API.
     """
     
-    def __init__(self, api_key: str, dataset_id: str = "gd_l7q7dkf244hwjntr0", storage_dir: str = "snapshot_records"):
+    def __init__(self, api_key: str, dataset: str = "amazon_products", storage_dir: str = "snapshot_records"):
         """
-        Initialize the filter with API credentials.
+        Initialize the BrightData database connection.
         
         Args:
             api_key: BrightData API key
-            dataset_id: Dataset ID for the target dataset (default: gd_l7q7dkf244hwjntr0)
+            dataset: Dataset name (e.g., 'amazon_products', 'amazon', 'shopee') or dataset ID
             storage_dir: Directory to store snapshot records (default: "snapshot_records")
         """
         self.api_key = api_key
-        self.dataset_id = dataset_id
+        
+        # Convert dataset name to ID if needed
+        try:
+            self.dataset_id = get_dataset_id(dataset)
+        except ValueError as e:
+            raise ValueError(f"Invalid dataset: {e}")
+        
         self.base_url = "https://api.brightdata.com/datasets"
         self.headers = {
             "Authorization": f"Bearer {api_key}",
@@ -189,14 +195,29 @@ class BrightDataFilter:
         os.makedirs(self.storage_dir, exist_ok=True)
         
         # Validate dataset exists
-        self.schema = get_dataset_schema(dataset_id)
+        self.schema = get_dataset_schema(self.dataset_id)
         if not self.schema:
-            raise ValueError(f"Unknown dataset ID: {dataset_id}. Available datasets: {self._get_available_datasets()}")
+            raise ValueError(f"Unknown dataset ID: {self.dataset_id}. Available datasets: {self._get_available_datasets()}")
     
     def _get_available_datasets(self) -> List[str]:
         """Get list of available dataset IDs"""
         from .dataset_registry import list_available_datasets
         return [schema.dataset_id for schema in list_available_datasets()]
+    
+    @classmethod
+    def amazon_products(cls, api_key: str, storage_dir: str = "snapshot_records"):
+        """Convenience method to create BrightData connection for Amazon Products dataset"""
+        return cls(api_key, "amazon_products", storage_dir)
+    
+    @classmethod
+    def amazon_walmart(cls, api_key: str, storage_dir: str = "snapshot_records"):
+        """Convenience method to create BrightData connection for Amazon-Walmart dataset"""
+        return cls(api_key, "amazon_walmart", storage_dir)
+    
+    @classmethod
+    def shopee(cls, api_key: str, storage_dir: str = "snapshot_records"):
+        """Convenience method to create BrightData connection for Shopee dataset"""
+        return cls(api_key, "shopee", storage_dir)
     
     def create_filter(self, 
                      name: str, 

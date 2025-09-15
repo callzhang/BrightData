@@ -365,6 +365,24 @@ class DatasetRegistry:
 # Global registry instance
 dataset_registry = DatasetRegistry()
 
+# Dataset name mapping for user-friendly access
+DATASET_NAMES = {
+    # Amazon Products
+    "amazon_products": "gd_l7q7dkf244hwjntr0",
+    "amazon_product": "gd_l7q7dkf244hwjntr0",
+    "amazon": "gd_l7q7dkf244hwjntr0",
+    
+    # Amazon-Walmart Comparison
+    "amazon_walmart": "gd_m4l6s4mn2g2rkx9lia",
+    "amazon_walmart_comparison": "gd_m4l6s4mn2g2rkx9lia",
+    "amazon_walmart_dataset": "gd_m4l6s4mn2g2rkx9lia",
+    
+    # Shopee Products
+    "shopee_products": "gd_lk122xxgf86xf97py",
+    "shopee": "gd_lk122xxgf86xf97py",
+    "shopee_product": "gd_lk122xxgf86xf97py",
+}
+
 
 def get_dataset_schema(dataset_id: str) -> Optional[DatasetSchema]:
     """Get dataset schema by ID"""
@@ -384,3 +402,40 @@ def get_field_reference(dataset_id: str) -> Dict[str, str]:
 def validate_field_operator(dataset_id: str, field_name: str, operator: str) -> bool:
     """Validate field and operator combination"""
     return dataset_registry.validate_field(dataset_id, field_name, operator)
+
+
+def get_dataset_id(dataset_name: str) -> str:
+    """
+    Get dataset ID from user-friendly name
+    
+    Args:
+        dataset_name: User-friendly dataset name (e.g., 'amazon_products', 'amazon', 'shopee')
+        
+    Returns:
+        Dataset ID for use with BrightDataFilter
+        
+    Raises:
+        ValueError: If dataset name is not recognized
+    """
+    dataset_name_lower = dataset_name.lower().replace(' ', '_')
+    
+    if dataset_name_lower in DATASET_NAMES:
+        return DATASET_NAMES[dataset_name_lower]
+    
+    # If not found, check if it's already a dataset ID
+    if dataset_name.startswith('gd_'):
+        return dataset_name
+    
+    # List available names for better error message
+    available_names = list(DATASET_NAMES.keys())
+    raise ValueError(f"Unknown dataset name: '{dataset_name}'. Available names: {available_names}")
+
+
+def list_dataset_names() -> Dict[str, str]:
+    """
+    List all available dataset names and their IDs
+    
+    Returns:
+        Dictionary mapping user-friendly names to dataset IDs
+    """
+    return DATASET_NAMES.copy()

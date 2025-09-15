@@ -25,8 +25,14 @@ pip install -r requirements.txt  # If requirements.txt exists
 ```python
 from util import BrightDataFilter, AMAZON_FIELDS as AF, get_brightdata_api_key
 
-# Initialize the BrightData database connection for Amazon Products dataset
+# Method 1: Using dataset name (recommended)
 api_key = get_brightdata_api_key()
+brightdata = BrightDataFilter(api_key, "amazon_products")
+
+# Method 2: Using convenience class method
+brightdata = BrightDataFilter.amazon_products(api_key)
+
+# Method 3: Using dataset ID (still supported)
 brightdata = BrightDataFilter(api_key, "gd_l7q7dkf244hwjntr0")
 
 # Create a simple database query using dataset-specific fields
@@ -47,19 +53,38 @@ brightdata:
   api_key: "your_brightdata_api_key_here"
 ```
 
-### 2. Dataset IDs
-The system supports multiple datasets with their specific IDs:
+### 2. Dataset Access
+The system supports multiple datasets with user-friendly names:
 
-- **Amazon Products**: `gd_l7q7dkf244hwjntr0`
-- **Amazon-Walmart Comparison**: `gd_m4l6s4mn2g2rkx9lia`  
-- **Shopee Products**: `gd_lk122xxgf86xf97py`
+```python
+from util import BrightDataFilter, get_dataset_id, list_dataset_names
+
+# List all available dataset names
+print(list_dataset_names())
+# Output: {'amazon_products': 'gd_l7q7dkf244hwjntr0', 'amazon': 'gd_l7q7dkf244hwjntr0', ...}
+
+# Access datasets by name (recommended)
+brightdata = BrightDataFilter(api_key, "amazon_products")
+brightdata = BrightDataFilter(api_key, "amazon_walmart") 
+brightdata = BrightDataFilter(api_key, "shopee")
+
+# Or use convenience methods
+brightdata = BrightDataFilter.amazon_products(api_key)
+brightdata = BrightDataFilter.amazon_walmart(api_key)
+brightdata = BrightDataFilter.shopee(api_key)
+```
+
+**Available Dataset Names:**
+- **Amazon Products**: `"amazon_products"`, `"amazon_product"`, `"amazon"`
+- **Amazon-Walmart Comparison**: `"amazon_walmart"`, `"amazon_walmart_comparison"`, `"amazon_walmart_dataset"`
+- **Shopee Products**: `"shopee_products"`, `"shopee"`, `"shopee_product"`
 
 ### 3. Storage Configuration
 Local snapshot records are stored in `snapshot_records/` by default. You can customize this:
 
 ```python
 # Custom storage directory
-brightdata = BrightDataFilter(api_key, "gd_l7q7dkf244hwjntr0", "my_snapshots")
+brightdata = BrightDataFilter(api_key, "amazon_products", "my_snapshots")
 ```
 
 ## 📋 Table of Contents
@@ -81,16 +106,25 @@ brightdata = BrightDataFilter(api_key, "gd_l7q7dkf244hwjntr0", "my_snapshots")
 ```python
 from util import BrightDataFilter, AMAZON_FIELDS as AF, AMAZON_WALMART_FIELDS as AW, SHOPEE_FIELDS as SF, get_brightdata_api_key
 
-# Initialize the BrightData database connection for Amazon Products dataset
+# Initialize BrightData database connections for different datasets
 api_key = get_brightdata_api_key()
-brightdata = BrightDataFilter(api_key, "gd_l7q7dkf244hwjntr0")
 
-# Create a simple database query using dataset-specific fields
-high_rated_products = AF.rating >= 4.5
+# Amazon Products dataset
+amazon_db = BrightDataFilter(api_key, "amazon_products")
+amazon_query = AF.rating >= 4.5
 
-# Execute the database query
-result = brightdata.search_data(high_rated_products, records_limit=1000)
-print(f"Found products with snapshot ID: {result['snapshot_id']}")
+# Amazon-Walmart Comparison dataset  
+comparison_db = BrightDataFilter(api_key, "amazon_walmart")
+comparison_query = AW.price_difference > 10
+
+# Shopee Products dataset
+shopee_db = BrightDataFilter(api_key, "shopee")
+shopee_query = SF.rating >= 4.0
+
+# Execute database queries
+amazon_result = amazon_db.search_data(amazon_query, records_limit=1000)
+comparison_result = comparison_db.search_data(comparison_query, records_limit=1000)
+shopee_result = shopee_db.search_data(shopee_query, records_limit=1000)
 ```
 
 ## Multi-Dataset Support

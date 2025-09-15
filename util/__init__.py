@@ -46,7 +46,9 @@ from .dataset_registry import (
     get_dataset_schema,
     list_available_datasets,
     get_field_reference,
-    validate_field_operator
+    validate_field_operator,
+    get_dataset_id,
+    list_dataset_names
 )
 
 __all__ = [
@@ -74,6 +76,8 @@ __all__ = [
     'list_available_datasets',
     'get_field_reference',
     'validate_field_operator',
+    'get_dataset_id',
+    'list_dataset_names',
     # Direct callable fields (backward compatibility)
     'TITLE', 'ASIN', 'BRAND', 'DESCRIPTION', 'CATEGORIES',
     'INITIAL_PRICE', 'FINAL_PRICE', 'CURRENCY', 'DISCOUNT',
