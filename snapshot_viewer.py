@@ -13,6 +13,7 @@ from pathlib import Path
 import os
 from datetime import datetime
 import time
+import requests
 import sys
 
 # Add the util directory to the path
@@ -99,15 +100,27 @@ def update_snapshot_status(record):
     # Only check status for non-completed snapshots
     if current_status in ['submitted', 'processing', 'scheduled']:
         try:
-            metadata = check_snapshot_status(record['snapshot_id'], record.get('dataset_id'))
+            metadata = get_snapshot_metadata(record['snapshot_id'])
             if metadata:
                 new_status = metadata.get('status', current_status)
                 
                 # Only update if status actually changed
                 if new_status != current_status:
-                    # Update the record with new status
+                    # Update the record with new status and all metadata
                     record['status'] = new_status
                     record['metadata'] = metadata
+                    
+                    # Update additional fields from metadata
+                    if 'dataset_id' in metadata:
+                        record['dataset_id'] = metadata['dataset_id']
+                    if 'created' in metadata:
+                        record['created_time'] = metadata['created']
+                    if 'dataset_size' in metadata:
+                        record['dataset_size'] = metadata['dataset_size']
+                    if 'file_size' in metadata:
+                        record['file_size'] = metadata['file_size']
+                    if 'cost' in metadata:
+                        record['cost'] = metadata['cost']
                     if metadata.get('completion_time'):
                         record['completion_time'] = metadata['completion_time']
                     
@@ -165,54 +178,87 @@ def delete_snapshot_record(snapshot_id):
         st.error(f"Error deleting snapshot: {e}")
         return False
 
-def update_manual_snapshot_status(snapshot_id, dataset_id):
-    """Update the status of a manually added snapshot."""
+def update_manual_snapshot_status(snapshot_id):
+    """Update the status of a manually added snapshot using the utility function."""
     try:
-        # Initialize BrightData filter to check status
-        if dataset_id and dataset_id != 'unknown':
-            brightdata = BrightDataFilter(dataset_id)
-            metadata = brightdata.get_snapshot_metadata(snapshot_id)
-            
-            if metadata:
-                # Update the record with new status and metadata
-                record_file = Path("snapshot_records") / f"{snapshot_id}.json"
-                if record_file.exists():
-                    with open(record_file, 'r') as f:
-                        record = json.load(f)
-                    
-                    # Update status and metadata
-                    record['status'] = metadata.get('status', 'unknown')
-                    record['metadata'] = metadata
-                    
-                    # Update filter criteria to show it's been updated
-                    if record.get('filter_criteria', {}).get('manual_entry'):
-                        record['filter_criteria']['last_updated'] = datetime.now().isoformat()
-                        record['filter_criteria']['status_checked'] = True
-                    
-                    # Save updated record
-                    with open(record_file, 'w') as f:
-                        json.dump(record, f, indent=2)
-                    
-                    return True
+        # Get metadata using the utility function
+        metadata = get_snapshot_metadata(snapshot_id)
+        
+        if metadata:
+            # Update the record with new status and metadata
+            record_file = Path("snapshot_records") / f"{snapshot_id}.json"
+            if record_file.exists():
+                with open(record_file, 'r') as f:
+                    record = json.load(f)
+                
+                # Update status and metadata with all available information
+                record['status'] = metadata.get('status', 'unknown')
+                record['metadata'] = metadata
+                
+                # Update additional fields from metadata
+                if 'dataset_id' in metadata:
+                    record['dataset_id'] = metadata['dataset_id']
+                if 'created' in metadata:
+                    record['created_time'] = metadata['created']
+                if 'dataset_size' in metadata:
+                    record['dataset_size'] = metadata['dataset_size']
+                if 'file_size' in metadata:
+                    record['file_size'] = metadata['file_size']
+                if 'cost' in metadata:
+                    record['cost'] = metadata['cost']
+                
+                # Update filter criteria to show it's been updated
+                if record.get('filter_criteria', {}).get('manual_entry'):
+                    record['filter_criteria']['last_updated'] = datetime.now().isoformat()
+                    record['filter_criteria']['status_checked'] = True
+                
+                # Save updated record
+                with open(record_file, 'w') as f:
+                    json.dump(record, f, indent=2)
+                
+                return True
         return False
     except Exception as e:
         st.error(f"Error updating snapshot status: {e}")
         return False
 
-def get_snapshot_filter_details(snapshot_id, dataset_id):
+def get_snapshot_metadata(snapshot_id):
+    """
+    Get snapshot metadata from BrightData API.
+    This is a utility function that doesn't require a dataset ID.
+    """
+    try:
+        from .config import get_brightdata_api_key
+        api_key = get_brightdata_api_key()
+        
+        headers = {
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json"
+        }
+        
+        response = requests.get(
+            f"https://api.brightdata.com/datasets/snapshots/{snapshot_id}",
+            headers=headers,
+            timeout=30
+        )
+        response.raise_for_status()
+        return response.json()
+    except Exception as e:
+        st.error(f"Error retrieving snapshot metadata: {e}")
+        return None
+
+def get_snapshot_filter_details(snapshot_id):
     """
     Attempt to retrieve filter details from BrightData API.
     Note: This may not always work as the API doesn't always return original filter criteria.
     """
     try:
-        if dataset_id and dataset_id != 'unknown':
-            brightdata = BrightDataFilter(dataset_id)
-            metadata = brightdata.get_snapshot_metadata(snapshot_id)
-            
+        metadata = get_snapshot_metadata(snapshot_id)
+        if metadata:
             # Check if metadata contains filter information
-            if metadata and 'filter' in metadata:
+            if 'filter' in metadata:
                 return metadata['filter']
-            elif metadata and 'query' in metadata:
+            elif 'query' in metadata:
                 return metadata['query']
             else:
                 return None
@@ -371,15 +417,15 @@ def main():
         
         with col2:
             if st.form_submit_button("🔄 Update Status"):
-                if manual_snapshot_id and manual_dataset_id:
+                if manual_snapshot_id:
                     with st.spinner("Updating status..."):
-                        if update_manual_snapshot_status(manual_snapshot_id, manual_dataset_id):
+                        if update_manual_snapshot_status(manual_snapshot_id):
                             st.sidebar.success(f"✅ Updated status for: {manual_snapshot_id[:12]}...")
                             st.rerun()
                         else:
                             st.sidebar.error("❌ Failed to update status")
                 else:
-                    st.sidebar.error("❌ Please enter both Snapshot ID and Dataset ID")
+                    st.sidebar.error("❌ Please enter Snapshot ID")
     
     # Add a section to try retrieving filter details from API
     st.sidebar.divider()
@@ -391,23 +437,18 @@ def main():
             placeholder="e.g., snap_abc123...",
             help="Enter a snapshot ID to try retrieving filter details from API"
         )
-        retrieve_dataset_id = st.text_input(
-            "Dataset ID",
-            placeholder="e.g., gd_l7q7dkf244hwjntr0",
-            help="Dataset ID for the snapshot"
-        )
         
         if st.form_submit_button("🔍 Retrieve Filter Details"):
-            if retrieve_snapshot_id and retrieve_dataset_id:
+            if retrieve_snapshot_id:
                 with st.spinner("Retrieving filter details..."):
-                    filter_details = get_snapshot_filter_details(retrieve_snapshot_id, retrieve_dataset_id)
+                    filter_details = get_snapshot_filter_details(retrieve_snapshot_id)
                     if filter_details:
                         st.sidebar.success("✅ Filter details retrieved!")
                         st.sidebar.json(filter_details)
                     else:
                         st.sidebar.warning("⚠️ No filter details found in API response")
             else:
-                st.sidebar.error("❌ Please enter both Snapshot ID and Dataset ID")
+                st.sidebar.error("❌ Please enter Snapshot ID")
     
     st.sidebar.divider()
     
