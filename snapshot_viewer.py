@@ -186,11 +186,65 @@ def main():
         st.session_state['last_refresh'] = current_time
         st.rerun()
     
-    # Auto-refresh and status checking
+    # Sidebar - Snapshot List
+    st.sidebar.header("📊 All Snapshots")
+    
+    # Status summary in sidebar
+    status_counts = {}
+    for record in records:
+        status = record.get('status', 'unknown')
+        status_counts[status] = status_counts.get(status, 0) + 1
+    
+    # Display status summary
+    if status_counts:
+        status_text = " | ".join([f"{status}: {count}" for status, count in status_counts.items()])
+        st.sidebar.caption(f"Status: {status_text}")
+    
+    st.sidebar.divider()
+    
+    # Display all snapshots in sidebar
+    for i, record in enumerate(records):
+        status = record.get('status', 'unknown')
+        date = record.get('submission_time', 'Unknown date')
+        is_selected = st.session_state.get('selected_snapshot', {}).get('snapshot_id') == record['snapshot_id']
+        
+        if date != 'Unknown date':
+            try:
+                date_obj = datetime.fromisoformat(date.replace('Z', '+00:00'))
+                date_str = date_obj.strftime('%m-%d %H:%M')
+            except:
+                date_str = date[:10] if len(date) > 10 else date
+        else:
+            date_str = 'Unknown'
+        
+        # Create a clickable card for each snapshot in sidebar
+        if is_selected:
+            st.sidebar.markdown("""
+            <div style="background-color: #e3f2fd; padding: 0.5rem; border-radius: 0.25rem; border-left: 3px solid #2196f3; margin: 0.25rem 0;">
+            """, unsafe_allow_html=True)
+        
+        col1, col2 = st.sidebar.columns([3, 1])
+        
+        with col1:
+            st.sidebar.write(f"**{record['snapshot_id'][:12]}...**")
+            st.sidebar.caption(f"{date_str}")
+            st.sidebar.markdown(get_snapshot_status_badge(status), unsafe_allow_html=True)
+        
+        with col2:
+            if st.sidebar.button("📋", key=f"select_{i}", help="Select this snapshot"):
+                st.session_state['selected_snapshot'] = record
+                st.rerun()
+        
+        if is_selected:
+            st.sidebar.markdown("</div>", unsafe_allow_html=True)
+        
+        st.sidebar.divider()
+    
+    # Main content area controls
     col1, col2 = st.columns([3, 1])
     
     with col1:
-        st.subheader("📋 Snapshot List")
+        st.subheader("📋 Snapshot Details")
     
     with col2:
         col2_1, col2_2 = st.columns(2)
@@ -218,76 +272,15 @@ def main():
             else:
                 st.info("🔄 Refreshing...")
     
-    # Create two-column layout
-    left_col, right_col = st.columns([1, 2])
+    # Main content area
+    # Get selected record (from session state or first record)
+    if 'selected_snapshot' in st.session_state:
+        selected_record = st.session_state['selected_snapshot']
+    else:
+        selected_record = records[0]
+        st.session_state['selected_snapshot'] = selected_record
     
-    with left_col:
-        st.subheader("📊 All Snapshots")
-        
-        # Status summary
-        status_counts = {}
-        for record in records:
-            status = record.get('status', 'unknown')
-            status_counts[status] = status_counts.get(status, 0) + 1
-        
-        # Display status summary
-        if status_counts:
-            status_text = " | ".join([f"{status}: {count}" for status, count in status_counts.items()])
-            st.caption(f"Status: {status_text}")
-        
-        st.divider()
-        
-        # Display all snapshots in a compact list
-        for i, record in enumerate(records):
-            status = record.get('status', 'unknown')
-            date = record.get('submission_time', 'Unknown date')
-            is_selected = st.session_state.get('selected_snapshot', {}).get('snapshot_id') == record['snapshot_id']
-            
-            if date != 'Unknown date':
-                try:
-                    date_obj = datetime.fromisoformat(date.replace('Z', '+00:00'))
-                    date_str = date_obj.strftime('%m-%d %H:%M')
-                except:
-                    date_str = date[:10] if len(date) > 10 else date
-            else:
-                date_str = 'Unknown'
-            
-            # Create a clickable card for each snapshot
-            with st.container():
-                # Highlight selected snapshot
-                if is_selected:
-                    st.markdown("""
-                    <div style="background-color: #e3f2fd; padding: 0.5rem; border-radius: 0.25rem; border-left: 3px solid #2196f3;">
-                    """, unsafe_allow_html=True)
-                
-                col1, col2, col3 = st.columns([2, 1, 1])
-                
-                with col1:
-                    st.write(f"**{record['snapshot_id'][:12]}...**")
-                    st.caption(f"{date_str}")
-                
-                with col2:
-                    st.markdown(get_snapshot_status_badge(status), unsafe_allow_html=True)
-                
-                with col3:
-                    if st.button("📋", key=f"select_{i}", help="Select this snapshot"):
-                        st.session_state['selected_snapshot'] = record
-                        st.rerun()
-                
-                if is_selected:
-                    st.markdown("</div>", unsafe_allow_html=True)
-                
-                st.divider()
-    
-    with right_col:
-        # Get selected record (from session state or first record)
-        if 'selected_snapshot' in st.session_state:
-            selected_record = st.session_state['selected_snapshot']
-        else:
-            selected_record = records[0]
-            st.session_state['selected_snapshot'] = selected_record
-        
-        snapshot_id = selected_record['snapshot_id']
+    snapshot_id = selected_record['snapshot_id']
     
     # Main content area
     col1, col2, col3, col4 = st.columns(4)
