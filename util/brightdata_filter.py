@@ -372,6 +372,7 @@ class BrightDataFilter:
     def _filters_equal(self, filter1: Dict, filter2: Dict) -> bool:
         """
         Compare two filter dictionaries for equality.
+        Handles order-independent comparison for AND/OR operations.
         
         Args:
             filter1: First filter dictionary
@@ -381,13 +382,17 @@ class BrightDataFilter:
             True if filters are equivalent, False otherwise
         """
         try:
-            # Simple deep comparison for filter dictionaries
             def normalize_filter(f):
                 if isinstance(f, dict):
                     normalized = {}
                     for key, value in f.items():
-                        if isinstance(value, list):
-                            # For lists, recursively normalize each item
+                        if key == 'filters' and isinstance(value, list):
+                            # For filter lists, sort by a consistent key to handle reordering
+                            # Create a sort key based on the filter content
+                            sorted_filters = sorted(value, key=lambda x: self._get_filter_sort_key(x))
+                            normalized[key] = [normalize_filter(item) for item in sorted_filters]
+                        elif isinstance(value, list):
+                            # For other lists, recursively normalize each item
                             normalized[key] = [normalize_filter(item) for item in value]
                         elif isinstance(value, dict):
                             # For nested dicts, recursively normalize
@@ -403,6 +408,25 @@ class BrightDataFilter:
             # If comparison fails, assume filters are different
             print(f"⚠️ Filter comparison error: {e}")
             return False
+    
+    def _get_filter_sort_key(self, filter_item: Dict) -> str:
+        """
+        Generate a sort key for a filter item to enable order-independent comparison.
+        
+        Args:
+            filter_item: Single filter condition dictionary
+            
+        Returns:
+            String sort key
+        """
+        try:
+            # Create a consistent sort key based on filter properties
+            name = filter_item.get('name', '')
+            operator = filter_item.get('operator', '')
+            value = str(filter_item.get('value', ''))
+            return f"{name}:{operator}:{value}"
+        except Exception:
+            return str(filter_item)
     
     def search_data(self, 
                     filter_obj: Union[FilterCondition, FilterGroup], 
