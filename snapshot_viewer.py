@@ -226,7 +226,9 @@ def main():
     
     # Check if 30 seconds have passed since last refresh
     current_time = time.time()
-    if current_time - st.session_state['last_refresh'] >= 30:
+    time_since_refresh = current_time - st.session_state['last_refresh']
+    
+    if time_since_refresh >= 30:
         # Auto-refresh statuses
         updated_count = 0
         for record in records:
@@ -238,6 +240,9 @@ def main():
         
         st.session_state['last_refresh'] = current_time
         st.rerun()
+    
+    # Store countdown info for display
+    st.session_state['countdown_seconds'] = max(0, 30 - int(time_since_refresh))
     
     # Sidebar - Snapshot List
     st.sidebar.header("📊 All Snapshots")
@@ -400,11 +405,10 @@ def main():
         
         with col2_2:
             # Show auto-refresh status with countdown
-            time_since_refresh = current_time - st.session_state['last_refresh']
-            time_until_next = 30 - time_since_refresh
+            countdown_seconds = st.session_state.get('countdown_seconds', 0)
             
-            if time_until_next > 0:
-                st.info(f"🔄 Next refresh: {int(time_until_next)}s")
+            if countdown_seconds > 0:
+                st.info(f"🔄 Next refresh: {countdown_seconds}s")
             else:
                 st.info("🔄 Ready to refresh")
                 # Auto-refresh when countdown reaches 0
@@ -480,19 +484,13 @@ def main():
     data_file = Path("downloads") / f"{snapshot_id}.json"
     data_available = data_file.exists()
     
-    col1, col2, col3 = st.columns(3)
+    col1, col2 = st.columns(2)
     
     with col1:
         if data_available:
             st.success("✅ Data available for analysis")
-            
-            if st.button("📊 View Data", type="primary"):
-                st.session_state['view_data'] = True
         else:
             st.warning("⚠️ Data not downloaded yet")
-    
-    with col2:
-        if not data_available:
             if st.button("📥 Download Data"):
                 try:
                     # Initialize BrightData filter
@@ -510,7 +508,7 @@ def main():
                 except Exception as e:
                     st.error(f"Error: {e}")
     
-    with col3:
+    with col2:
         # Delete button with confirmation
         if st.button("🗑️ Delete Snapshot", type="secondary"):
             st.session_state['show_delete_confirm'] = True
@@ -541,8 +539,8 @@ def main():
                     st.session_state['show_delete_confirm'] = False
                     st.rerun()
     
-    # Data Analysis (if data is available and requested)
-    if st.session_state.get('view_data', False) and data_available:
+    # Data Analysis (if data is available)
+    if data_available:
         st.divider()
         st.header("📈 Data Analysis")
         
