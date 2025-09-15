@@ -147,6 +147,24 @@ def load_snapshot_data(snapshot_id):
             return None
     return None
 
+def delete_snapshot_record(snapshot_id):
+    """Delete a snapshot record and its associated files."""
+    try:
+        # Delete the JSON record file
+        record_file = Path("snapshot_records") / f"{snapshot_id}.json"
+        if record_file.exists():
+            record_file.unlink()
+        
+        # Delete the downloaded data file if it exists
+        data_file = Path("downloads") / f"{snapshot_id}.json"
+        if data_file.exists():
+            data_file.unlink()
+        
+        return True
+    except Exception as e:
+        st.error(f"Error deleting snapshot: {e}")
+        return False
+
 def main():
     # Header
     st.markdown('<h1 class="main-header">📊 BrightData Snapshot Viewer</h1>', unsafe_allow_html=True)
@@ -285,13 +303,23 @@ def main():
                         st.info("ℹ️ No status updates needed")
         
         with col2_2:
-            # Show auto-refresh status with countdown
+            # Show auto-refresh status with live countdown
             time_since_refresh = current_time - st.session_state['last_refresh']
             time_until_next = 30 - time_since_refresh
+            
+            # Use placeholder for live countdown
+            countdown_placeholder = st.empty()
+            
             if time_until_next > 0:
-                st.info(f"🔄 Next refresh: {int(time_until_next)}s")
+                countdown_placeholder.info(f"🔄 Next refresh: {int(time_until_next)}s")
+                # Auto-refresh every second to update countdown
+                time.sleep(1)
+                st.rerun()
             else:
-                st.info("🔄 Refreshing...")
+                countdown_placeholder.info("🔄 Refreshing...")
+                # Trigger refresh
+                st.session_state['last_refresh'] = current_time
+                st.rerun()
     
     # Main content area
     # Get selected record (from session state or first record)
@@ -361,7 +389,7 @@ def main():
     data_file = Path("downloads") / f"{snapshot_id}.json"
     data_available = data_file.exists()
     
-    col1, col2 = st.columns(2)
+    col1, col2, col3 = st.columns(3)
     
     with col1:
         if data_available:
@@ -390,6 +418,37 @@ def main():
                         st.error("No dataset ID found in record")
                 except Exception as e:
                     st.error(f"Error: {e}")
+    
+    with col3:
+        # Delete button with confirmation
+        if st.button("🗑️ Delete Snapshot", type="secondary"):
+            st.session_state['show_delete_confirm'] = True
+        
+        # Delete confirmation dialog
+        if st.session_state.get('show_delete_confirm', False):
+            st.warning("⚠️ **Delete Confirmation**")
+            st.write(f"Are you sure you want to delete snapshot `{snapshot_id[:12]}...`?")
+            st.write("This will permanently remove:")
+            st.write("• Snapshot record and metadata")
+            st.write("• Downloaded data (if any)")
+            
+            confirm_col1, confirm_col2 = st.columns(2)
+            with confirm_col1:
+                if st.button("✅ Yes, Delete", type="primary"):
+                    if delete_snapshot_record(snapshot_id):
+                        st.success("✅ Snapshot deleted successfully!")
+                        # Clear session state and refresh
+                        if 'selected_snapshot' in st.session_state:
+                            del st.session_state['selected_snapshot']
+                        st.session_state['show_delete_confirm'] = False
+                        st.rerun()
+                    else:
+                        st.error("❌ Failed to delete snapshot")
+            
+            with confirm_col2:
+                if st.button("❌ Cancel"):
+                    st.session_state['show_delete_confirm'] = False
+                    st.rerun()
     
     # Data Analysis (if data is available and requested)
     if st.session_state.get('view_data', False) and data_available:
