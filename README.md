@@ -6,9 +6,12 @@ A comprehensive Python library for accessing and filtering data using the Bright
 
 - **Multi-Dataset Support**: Amazon Products, Amazon-Walmart Comparison, Shopee Products
 - **Type-Aware Filtering**: Intuitive syntax with automatic validation
+- **Smart Deduplication**: Automatically detects and reuses existing snapshots with identical conditions
+- **Order-Independent Matching**: Reordered filter conditions are correctly identified as duplicates
 - **Snapshot Management**: Track, monitor, and download long-running queries
 - **Local Record Storage**: Persistent JSON storage for all filter submissions
 - **Real-time Monitoring**: Monitor processing status and handle downloads
+- **Automatic API Key Loading**: Seamless authentication from `secrets.yaml`
 - **Comprehensive Documentation**: Complete examples and API reference
 - **Jupyter Integration**: Ready-to-use notebooks with working examples
 
@@ -25,7 +28,7 @@ pip install -r requirements.txt  # If requirements.txt exists
 ```python
 from util import BrightDataFilter
 
-# Method 1: Using dataset name (recommended) - API key loaded automatically
+# Method 1: Using dataset name (recommended) - API key loaded automatically from secrets.yaml
 amazon_products = BrightDataFilter("amazon_products")
 
 # Method 2: Using convenience class method - API key loaded automatically
@@ -40,15 +43,16 @@ amazon_products = BrightDataFilter("amazon_products", api_key="your_custom_key")
 # Create a simple database query using the dataset's filter fields
 high_rated_products = amazon_products.filter.rating >= 4.5
 
-# Execute the database query
+# Execute the database query (includes automatic deduplication)
 result = amazon_products.search_data(high_rated_products, records_limit=1000)
 print(f"Found products with snapshot ID: {result['snapshot_id']}")
+print(f"Reused existing snapshot: {result.get('existing', False)}")
 ```
 
 ## ⚙️ Configuration
 
-### 1. API Key Setup
-Create a `secrets.yaml` file in your project root:
+### 1. API Key Setup (Automatic Loading)
+The system automatically loads your API key from `secrets.yaml`. Create this file in your project root:
 
 ```yaml
 brightdata:
@@ -814,8 +818,10 @@ except ValueError as e:
 
 1. **API Key Not Found**: Ensure `secrets.yaml` exists and contains valid API key
 2. **Invalid Operators**: Check operator spelling and field type compatibility
-3. **Large Result Sets**: Use more specific filters or lower `records_limit`
-4. **Timeout Errors**: Reduce filter complexity or increase timeout in configuration
+3. **401 Unauthorized Error**: Fixed in latest version - API key is now automatically loaded from `secrets.yaml`
+4. **Deduplication Not Working**: Fixed in latest version - now properly handles reordered filter conditions
+5. **Large Result Sets**: Use more specific filters or lower `records_limit`
+6. **Timeout Errors**: Reduce filter complexity or increase timeout in configuration
 
 ### Debug Mode
 
@@ -826,6 +832,68 @@ environment:
   debug: true
   log_level: "DEBUG"
 ```
+
+## Smart Deduplication System
+
+The BrightData Database System includes an intelligent deduplication feature that automatically detects and reuses existing snapshots with identical filter conditions, saving both time and money.
+
+### How It Works
+
+When you submit a filter, the system:
+
+1. **Checks for Existing Snapshots**: Searches through local snapshot records for identical conditions
+2. **Order-Independent Comparison**: Correctly identifies reordered filter conditions as duplicates
+3. **Reuses Existing Results**: Returns the existing snapshot ID instead of creating a new one
+4. **Saves Costs**: Avoids duplicate API charges for identical queries
+
+### Example
+
+```python
+from util import BrightDataFilter
+
+# Create dataset connection
+amazon_products = BrightDataFilter("amazon_products")
+AF = amazon_products.filter
+
+# Original filter
+original_filter = (
+    (AF.rating >= 4.0) &
+    (AF.reviews_count >= 50) &
+    (AF.currency == "USD")
+)
+
+# Submit original filter
+result1 = amazon_products.search_data(original_filter, records_limit=1000)
+print(f"New snapshot: {result1['snapshot_id']}")  # Creates new snapshot
+
+# Reordered filter (same logic, different order)
+reordered_filter = (
+    (AF.currency == "USD") &
+    (AF.rating >= 4.0) &
+    (AF.reviews_count >= 50)
+)
+
+# Submit reordered filter
+result2 = amazon_products.search_data(reordered_filter, records_limit=1000)
+print(f"Existing snapshot: {result2['snapshot_id']}")  # Reuses existing snapshot
+print(f"Cost saved: {result2.get('existing', False)}")  # True
+```
+
+### Benefits
+
+- **💰 Cost Savings**: No duplicate charges for identical queries
+- **⚡ Faster Results**: Immediate return of existing snapshot IDs
+- **🔄 Order Independence**: Works regardless of filter condition order
+- **🧠 Smart Matching**: Handles complex nested AND/OR logic correctly
+- **📊 Transparent**: Automatically works without user intervention
+
+### Technical Details
+
+The deduplication system uses:
+- **Local JSON Storage**: Maintains records of all submitted filters
+- **Deep Comparison**: Recursively compares filter structures
+- **Sorting Algorithm**: Ensures order-independent matching
+- **Metadata Tracking**: Stores submission time, status, and costs
 
 ## Snapshot Management
 
@@ -895,6 +963,32 @@ git commit -m "Add your feature"
 git push origin feature/your-feature-name
 # Open a pull request
 ```
+
+## 📝 Changelog
+
+### Latest Updates (September 2025)
+
+#### 🔧 Bug Fixes
+- **Fixed API Key Loading**: Resolved 401 Unauthorized errors by fixing header construction in `BrightDataFilter`
+- **Fixed Deduplication System**: Corrected metadata handling in `_find_existing_snapshot` method
+- **Enhanced Error Handling**: Improved error messages and debugging information
+
+#### ✨ New Features
+- **Smart Deduplication**: Automatically detects and reuses existing snapshots with identical conditions
+- **Order-Independent Matching**: Reordered filter conditions are correctly identified as duplicates
+- **Automatic API Key Loading**: Seamless authentication from `secrets.yaml` without manual configuration
+- **Cost Savings**: Prevents duplicate API charges for identical queries
+
+#### 🚀 Improvements
+- **Enhanced Filter Comparison**: Deep recursive comparison with sorting for order independence
+- **Better Documentation**: Comprehensive examples and troubleshooting guide
+- **Robust Error Handling**: Graceful handling of corrupted or incomplete snapshot records
+- **Performance Optimization**: Faster deduplication checks with improved algorithms
+
+### Previous Versions
+- **v1.0**: Initial release with multi-dataset support and basic filtering
+- **v1.1**: Added snapshot management and local record storage
+- **v1.2**: Implemented unified API with direct filter field access
 
 ## 📄 License
 
