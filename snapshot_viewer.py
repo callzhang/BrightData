@@ -12,6 +12,7 @@ import plotly.graph_objects as go
 from pathlib import Path
 import os
 from datetime import datetime
+import time
 import sys
 
 # Add the util directory to the path
@@ -166,6 +167,25 @@ def main():
         
         st.session_state['status_checked'] = True
     
+    # Auto-refresh mechanism
+    if 'last_refresh' not in st.session_state:
+        st.session_state['last_refresh'] = time.time()
+    
+    # Check if 30 seconds have passed since last refresh
+    current_time = time.time()
+    if current_time - st.session_state['last_refresh'] >= 30:
+        # Auto-refresh statuses
+        updated_count = 0
+        for record in records:
+            if update_snapshot_status(record):
+                updated_count += 1
+        
+        if updated_count > 0:
+            st.success(f"🔄 Auto-refresh: Updated {updated_count} snapshot statuses")
+        
+        st.session_state['last_refresh'] = current_time
+        st.rerun()
+    
     # Auto-refresh and status checking
     col1, col2 = st.columns([3, 1])
     
@@ -190,14 +210,13 @@ def main():
                         st.info("ℹ️ No status updates needed")
         
         with col2_2:
-            # Auto-refresh toggle
-            auto_refresh = st.checkbox("🔄 Auto", help="Auto-refresh every 30 seconds", value=False)
-            
-            if auto_refresh:
-                # Auto-refresh every 30 seconds
-                import time
-                time.sleep(30)
-                st.rerun()
+            # Show auto-refresh status with countdown
+            time_since_refresh = current_time - st.session_state['last_refresh']
+            time_until_next = 30 - time_since_refresh
+            if time_until_next > 0:
+                st.info(f"🔄 Next refresh: {int(time_until_next)}s")
+            else:
+                st.info("🔄 Refreshing...")
     
     # Create two-column layout
     left_col, right_col = st.columns([2, 1])
