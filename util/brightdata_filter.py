@@ -10,6 +10,7 @@ import requests
 import os
 import time
 from datetime import datetime
+from pathlib import Path
 from typing import Dict, List, Any, Optional, Union
 from dataclasses import dataclass
 from enum import Enum
@@ -314,11 +315,101 @@ class BrightDataFilter:
         """
         return FilterGroup(operator, filters)
     
+    def _find_existing_snapshot(self, filter_obj: Union[FilterCondition, FilterGroup], 
+                               records_limit: int) -> Optional[Dict[str, Any]]:
+        """
+        Find existing snapshots with the same filter conditions and records limit.
+        
+        Args:
+            filter_obj: Filter condition or group to match
+            records_limit: Records limit to match
+            
+        Returns:
+            Dictionary with snapshot info if found, None otherwise
+        """
+        try:
+            # Get all local snapshot records
+            snapshot_files = list(Path(self.storage_dir).glob("*.json"))
+            
+            # Convert filter to comparable format
+            current_filter_dict = filter_obj.to_dict()
+            
+            for snapshot_file in snapshot_files:
+                try:
+                    with open(snapshot_file, 'r') as f:
+                        record = json.load(f)
+                    
+                    # Check if dataset matches
+                    if record.get('dataset_id') != self.dataset_id:
+                        continue
+                    
+                    # Check if records limit matches
+                    if record.get('records_limit') != records_limit:
+                        continue
+                    
+                    # Check if filter conditions match
+                    stored_filter_dict = record.get('filter_criteria')
+                    if stored_filter_dict and self._filters_equal(current_filter_dict, stored_filter_dict):
+                        return {
+                            'snapshot_id': record.get('snapshot_id'),
+                            'status': record.get('status'),
+                            'cost': record.get('metadata', {}).get('cost'),
+                            'submission_time': record.get('submission_time'),
+                            'record_path': str(snapshot_file)
+                        }
+                        
+                except (json.JSONDecodeError, KeyError) as e:
+                    # Skip corrupted or incomplete records
+                    continue
+                    
+            return None
+            
+        except Exception as e:
+            # If there's any error in the deduplication process, continue with new submission
+            print(f"⚠️ Warning: Could not check for existing snapshots: {e}")
+            return None
+    
+    def _filters_equal(self, filter1: Dict, filter2: Dict) -> bool:
+        """
+        Compare two filter dictionaries for equality.
+        
+        Args:
+            filter1: First filter dictionary
+            filter2: Second filter dictionary
+            
+        Returns:
+            True if filters are equivalent, False otherwise
+        """
+        try:
+            # Simple deep comparison for filter dictionaries
+            def normalize_filter(f):
+                if isinstance(f, dict):
+                    normalized = {}
+                    for key, value in f.items():
+                        if isinstance(value, list):
+                            # For lists, recursively normalize each item
+                            normalized[key] = [normalize_filter(item) for item in value]
+                        elif isinstance(value, dict):
+                            # For nested dicts, recursively normalize
+                            normalized[key] = normalize_filter(value)
+                        else:
+                            normalized[key] = value
+                    return normalized
+                return f
+            
+            return normalize_filter(filter1) == normalize_filter(filter2)
+            
+        except Exception as e:
+            # If comparison fails, assume filters are different
+            print(f"⚠️ Filter comparison error: {e}")
+            return False
+    
     def search_data(self, 
                     filter_obj: Union[FilterCondition, FilterGroup], 
                     records_limit: int = 1000) -> Dict[str, Any]:
         """
         Execute the search with the provided filter and save local record.
+        Checks for existing snapshots with the same conditions to avoid duplicates.
         
         Args:
             filter_obj: Filter condition or group
@@ -327,6 +418,22 @@ class BrightDataFilter:
         Returns:
             API response with snapshot_id and local record path
         """
+        # Check for existing snapshots with the same conditions
+        existing_snapshot = self._find_existing_snapshot(filter_obj, records_limit)
+        if existing_snapshot:
+            print(f"🔄 Found existing snapshot with same conditions: {existing_snapshot['snapshot_id']}")
+            print(f"📊 Status: {existing_snapshot.get('status', 'Unknown')}")
+            print(f"💰 Cost: ${existing_snapshot.get('cost', 'N/A')}")
+            print(f"📅 Created: {existing_snapshot.get('submission_time', 'N/A')}")
+            
+            return {
+                "snapshot_id": existing_snapshot['snapshot_id'],
+                "local_record_path": existing_snapshot['record_path'],
+                "submission_time": existing_snapshot.get('submission_time'),
+                "existing": True
+            }
+        
+        # No existing snapshot found, submit new query
         payload = {
             "dataset_id": self.dataset_id,
             "records_limit": records_limit,
