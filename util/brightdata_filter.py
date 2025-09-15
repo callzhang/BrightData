@@ -431,6 +431,43 @@ class BrightDataFilter:
         except requests.exceptions.RequestException as e:
             raise Exception(f"Failed to get snapshot metadata: {str(e)}")
     
+    def deliver_snapshot(self, snapshot_id: str, delivery_config: Dict[str, Any]) -> Dict[str, Any]:
+        """Deliver a snapshot using the BrightData API
+        
+        Args:
+            snapshot_id: The snapshot ID to deliver
+            delivery_config: Delivery configuration (webhook, S3, etc.)
+            
+        Returns:
+            Dictionary with delivery job ID
+            
+        Example:
+            # Webhook delivery
+            config = {
+                "deliver": {
+                    "type": "webhook",
+                    "filename": {
+                        "template": "snapshot_{snapshot_id}",
+                        "extension": "json"
+                    },
+                    "endpoint": "https://your-webhook-url.com/receive"
+                },
+                "compress": False
+            }
+            result = brightdata.deliver_snapshot("snap_123", config)
+        """
+        try:
+            response = requests.post(
+                f"{self.base_url}/snapshots/{snapshot_id}/deliver",
+                headers=self.headers,
+                json=delivery_config,
+                timeout=30
+            )
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            raise Exception(f"Failed to deliver snapshot: {str(e)}")
+    
     def update_snapshot_record(self, snapshot_id: str, metadata: Dict[str, Any] = None, 
                               error: str = None) -> Dict[str, Any]:
         """

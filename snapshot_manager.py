@@ -199,8 +199,45 @@ class SnapshotManager:
             # Get download URL from metadata
             download_url = metadata.get("download_url")
             if not download_url:
-                print("❌ No download URL available")
-                return False
+                print("📤 No download URL available, attempting to deliver snapshot...")
+                
+                # Get dataset_id from local record
+                record_path = self.storage_dir / f"{snapshot_id}.json"
+                if not record_path.exists():
+                    print(f"❌ No local record found for {snapshot_id}")
+                    return False
+                
+                with open(record_path, 'r') as f:
+                    record = json.load(f)
+                
+                dataset_id = record["dataset_id"]
+                
+                # Try to deliver the snapshot with a webhook configuration
+                # This will trigger the delivery process
+                try:
+                    delivery_config = {
+                        "deliver": {
+                            "type": "webhook",
+                            "filename": {
+                                "template": f"snapshot_{snapshot_id}",
+                                "extension": "json"
+                            },
+                            "endpoint": "https://httpbin.org/post"  # Temporary endpoint for testing
+                        },
+                        "compress": False
+                    }
+                    
+                    # Initialize filter for API calls
+                    filter_obj = BrightDataFilter(dataset_id, str(self.storage_dir), self.api_key)
+                    delivery_result = filter_obj.deliver_snapshot(snapshot_id, delivery_config)
+                    
+                    print(f"✅ Delivery initiated: {delivery_result}")
+                    print("⏳ Please wait for delivery to complete, then try downloading again")
+                    return False
+                    
+                except Exception as e:
+                    print(f"❌ Failed to initiate delivery: {e}")
+                    return False
             
             # Create output directory
             output_path = Path(output_dir)
