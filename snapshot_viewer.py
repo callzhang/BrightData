@@ -49,15 +49,18 @@ st.markdown("""
         border-left: 4px solid #1f77b4;
     }
     .status-badge {
-        padding: 0.25rem 0.5rem;
-        border-radius: 0.25rem;
-        font-size: 0.8rem;
+        padding: 0.3rem 0.8rem;
+        border-radius: 1rem;
+        font-size: 0.75rem;
         font-weight: bold;
+        display: inline-block;
+        margin: 0.2rem 0;
+        border: 1px solid rgba(0,0,0,0.1);
     }
-    .status-completed { background-color: #d4edda; color: #155724; }
-    .status-processing { background-color: #fff3cd; color: #856404; }
-    .status-failed { background-color: #f8d7da; color: #721c24; }
-    .status-submitted { background-color: #cce5ff; color: #004085; }
+    .status-completed { background-color: #d4edda; color: #155724; border-color: #c3e6cb; }
+    .status-processing { background-color: #fff3cd; color: #856404; border-color: #ffeaa7; }
+    .status-failed { background-color: #f8d7da; color: #721c24; border-color: #f5c6cb; }
+    .status-submitted { background-color: #cce5ff; color: #004085; border-color: #b3d9ff; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -120,15 +123,18 @@ def update_snapshot_status(record):
     return False
 
 def get_snapshot_status_badge(status):
-    """Get a styled status badge."""
-    status_colors = {
-        'completed': 'status-completed',
-        'processing': 'status-processing', 
-        'failed': 'status-failed',
-        'submitted': 'status-submitted'
+    """Get a styled status badge with icon."""
+    status_config = {
+        'completed': {'class': 'status-completed', 'icon': '✅'},
+        'ready': {'class': 'status-completed', 'icon': '✅'},
+        'processing': {'class': 'status-processing', 'icon': '⏳'},
+        'building': {'class': 'status-processing', 'icon': '🔨'},
+        'submitted': {'class': 'status-submitted', 'icon': '📤'},
+        'failed': {'class': 'status-failed', 'icon': '❌'}
     }
-    color_class = status_colors.get(status, 'status-submitted')
-    return f'<span class="status-badge {color_class}">{status.upper()}</span>'
+    
+    config = status_config.get(status, {'class': 'status-submitted', 'icon': '📋'})
+    return f'<span class="status-badge {config["class"]}">{config["icon"]} {status.upper()}</span>'
 
 def load_snapshot_data(snapshot_id):
     """Load the actual data for a snapshot."""
@@ -200,8 +206,6 @@ def main():
         status_text = " | ".join([f"{status}: {count}" for status, count in status_counts.items()])
         st.sidebar.caption(f"Status: {status_text}")
     
-    st.sidebar.divider()
-    
     # Display all snapshots in sidebar
     for i, record in enumerate(records):
         status = record.get('status', 'unknown')
@@ -234,17 +238,28 @@ def main():
         if is_selected:
             card_style = "background-color: #e3f2fd; border-left: 3px solid #2196f3;"
         
-        # Make the whole area clickable
-        if st.sidebar.button(
-            f"[{status.upper()}] {record['snapshot_id'][:12]}...\n[{records_limit} Records] {filter_count} filters\n{date_str}",
-            key=f"select_{i}",
-            help="Click to select this snapshot",
-            use_container_width=True
-        ):
-            st.session_state['selected_snapshot'] = record
-            st.rerun()
-        
-        st.sidebar.divider()
+        # Create a clickable container for each snapshot
+        with st.sidebar.container():
+            # Status badge with icon
+            status_icons = {
+                'completed': '✅',
+                'ready': '✅', 
+                'processing': '⏳',
+                'building': '🔨',
+                'submitted': '📤',
+                'failed': '❌'
+            }
+            icon = status_icons.get(status, '📋')
+            
+            # Create clickable area
+            if st.sidebar.button(
+                f"{icon} {status.upper()}\n{record['snapshot_id'][:12]}...\n[{records_limit} Records] {filter_count} filters\n{date_str}",
+                key=f"select_{i}",
+                help="Click to select this snapshot",
+                use_container_width=True
+            ):
+                st.session_state['selected_snapshot'] = record
+                st.rerun()
     
     # Main content area controls
     col1, col2 = st.columns([3, 1])
