@@ -1,6 +1,6 @@
-# BrightData API Filter System
+# BrightData Database System
 
-A comprehensive Python library for filtering data using the BrightData API across multiple datasets. This system provides intuitive, type-safe filtering with built-in support for Amazon Products, Amazon-Walmart Comparison, Shopee Products, and other datasets, plus a complete snapshot management system for handling long-running queries.
+A comprehensive Python library for accessing and filtering data using the BrightData database API across multiple datasets. This system provides intuitive, type-safe database queries with built-in support for Amazon Products, Amazon-Walmart Comparison, Shopee Products, and other datasets, plus a complete snapshot management system for handling long-running database operations.
 
 ## 🚀 Features
 
@@ -25,15 +25,15 @@ pip install -r requirements.txt  # If requirements.txt exists
 ```python
 from util import BrightDataFilter, AMAZON_FIELDS as AF, get_brightdata_api_key
 
-# Initialize the filter for Amazon Products dataset
+# Initialize the BrightData database connection for Amazon Products dataset
 api_key = get_brightdata_api_key()
-amazon_filter = BrightDataFilter(api_key, "gd_l7q7dkf244hwjntr0")
+brightdata = BrightDataFilter(api_key, "gd_l7q7dkf244hwjntr0")
 
-# Create a simple filter using dataset-specific fields
+# Create a simple database query using dataset-specific fields
 high_rated_products = AF.rating >= 4.5
 
-# Execute the search
-result = amazon_filter.search_data(high_rated_products, records_limit=1000)
+# Execute the database query
+result = brightdata.search_data(high_rated_products, records_limit=1000)
 print(f"Found products with snapshot ID: {result['snapshot_id']}")
 ```
 
@@ -59,7 +59,7 @@ Local snapshot records are stored in `snapshot_records/` by default. You can cus
 
 ```python
 # Custom storage directory
-amazon_filter = BrightDataFilter(api_key, "gd_l7q7dkf244hwjntr0", "my_snapshots")
+brightdata = BrightDataFilter(api_key, "gd_l7q7dkf244hwjntr0", "my_snapshots")
 ```
 
 ## 📋 Table of Contents
@@ -81,15 +81,15 @@ amazon_filter = BrightDataFilter(api_key, "gd_l7q7dkf244hwjntr0", "my_snapshots"
 ```python
 from util import BrightDataFilter, AMAZON_FIELDS as AF, AMAZON_WALMART_FIELDS as AW, SHOPEE_FIELDS as SF, get_brightdata_api_key
 
-# Initialize the filter for Amazon Products dataset
+# Initialize the BrightData database connection for Amazon Products dataset
 api_key = get_brightdata_api_key()
-amazon_filter = BrightDataFilter(api_key, "gd_l7q7dkf244hwjntr0")
+brightdata = BrightDataFilter(api_key, "gd_l7q7dkf244hwjntr0")
 
-# Create a simple filter using dataset-specific fields
+# Create a simple database query using dataset-specific fields
 high_rated_products = AF.rating >= 4.5
 
-# Execute the search
-result = amazon_filter.search_data(high_rated_products, records_limit=1000)
+# Execute the database query
+result = brightdata.search_data(high_rated_products, records_limit=1000)
 print(f"Found products with snapshot ID: {result['snapshot_id']}")
 ```
 
@@ -719,11 +719,11 @@ for dataset in datasets:
 
 # Good - Use appropriate dataset-specific fields with aliases
 from util import AMAZON_FIELDS as AF, AMAZON_WALMART_FIELDS as AW
-amazon_filter = BrightDataFilter(api_key, "gd_l7q7dkf244hwjntr0")
+brightdata = BrightDataFilter(api_key, "gd_l7q7dkf244hwjntr0")
 amazon_query = AF.rating >= 4.0  # Uses Amazon-specific fields
 
 # Avoid - Mixing datasets
-amazon_filter = BrightDataFilter(api_key, "gd_l7q7dkf244hwjntr0")
+brightdata = BrightDataFilter(api_key, "gd_l7q7dkf244hwjntr0")
 amazon_query = AW.platform == "Amazon"  # Wrong dataset fields
 ```
 
@@ -808,19 +808,19 @@ python snapshot_manager.py --monitor
 ```
 
 The snapshot manager provides:
-- **Local Record Storage**: All filter criteria and metadata saved as JSON files
+- **Local Record Storage**: All database query criteria and metadata saved as JSON files
 - **Status Monitoring**: Real-time status checking from BrightData API
 - **Download Management**: Handle ready snapshots and view downloaded data
-- **Progress Tracking**: Monitor long-running jobs (30+ minutes)
+- **Progress Tracking**: Monitor long-running database operations (30+ minutes)
 - **Cost Tracking**: Monitor API costs per snapshot
 
 See [SNAPSHOT_MANAGER_README.md](SNAPSHOT_MANAGER_README.md) for complete documentation.
 
 ## Conclusion
 
-This comprehensive filter system provides powerful, intuitive tools for data analysis using the BrightData API across multiple datasets. The multi-dataset architecture with type-aware syntax makes complex filters readable and maintainable, enabling efficient analysis for various market research and product strategy applications. With built-in support for Amazon Products, Amazon-Walmart Comparison, Shopee Products, and extensible architecture for additional datasets, the system scales to meet diverse analytical needs across global e-commerce platforms.
+This comprehensive database system provides powerful, intuitive tools for data analysis using the BrightData database API across multiple datasets. The multi-dataset architecture with type-aware syntax makes complex database queries readable and maintainable, enabling efficient analysis for various market research and product strategy applications. With built-in support for Amazon Products, Amazon-Walmart Comparison, Shopee Products, and extensible architecture for additional datasets, the system scales to meet diverse analytical needs across global e-commerce platforms.
 
-The integrated snapshot management system ensures you never lose track of submitted filters and can efficiently handle the long processing times and download management required for large-scale data analysis.
+The integrated snapshot management system ensures you never lose track of submitted database queries and can efficiently handle the long processing times and download management required for large-scale data analysis.
 
 ## 🤝 Contributing
 
