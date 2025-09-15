@@ -184,6 +184,11 @@ def update_manual_snapshot_status(snapshot_id, dataset_id):
                     record['status'] = metadata.get('status', 'unknown')
                     record['metadata'] = metadata
                     
+                    # Update filter criteria to show it's been updated
+                    if record.get('filter_criteria', {}).get('manual_entry'):
+                        record['filter_criteria']['last_updated'] = datetime.now().isoformat()
+                        record['filter_criteria']['status_checked'] = True
+                    
                     # Save updated record
                     with open(record_file, 'w') as f:
                         json.dump(record, f, indent=2)
@@ -290,12 +295,17 @@ def main():
                         'dataset_id': manual_dataset_id or 'unknown',
                         'records_limit': manual_records_limit,
                         'submission_time': datetime.now().isoformat(),
-                        'status': 'unknown',
-                        'filter_criteria': {'manual_entry': True},
+                        'status': 'submitted',  # Default to submitted status
+                        'filter_criteria': {
+                            'manual_entry': True,
+                            'description': 'Manually added snapshot',
+                            'filters': []
+                        },
                         'metadata': {
                             'cost': None,
                             'delivery_url': None,
-                            'download_url': None
+                            'download_url': None,
+                            'status': 'submitted'
                         }
                     }
                     
@@ -473,7 +483,18 @@ def main():
         st.subheader("🔍 Filter Criteria")
         filter_criteria = selected_record.get('filter_criteria', {})
         if filter_criteria:
-            st.json(filter_criteria)
+            # Check if it's a manual entry
+            if filter_criteria.get('manual_entry'):
+                st.info("📝 **Manually Added Snapshot**")
+                st.write(f"**Description:** {filter_criteria.get('description', 'No description')}")
+                st.write(f"**Entry Type:** Manual addition")
+                if filter_criteria.get('filters'):
+                    st.write("**Filters:**")
+                    st.json(filter_criteria['filters'])
+                else:
+                    st.write("**Filters:** No filter criteria available")
+            else:
+                st.json(filter_criteria)
         else:
             st.info("No filter criteria available")
     
