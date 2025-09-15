@@ -1,18 +1,80 @@
-# BrightData API Filter Syntax Documentation
+# BrightData API Filter System
 
-This project provides a comprehensive Python library for filtering data using the BrightData API across multiple datasets. The filter system is designed to be intuitive, type-safe, and powerful for complex data analysis with built-in support for Amazon Products, Amazon-Walmart Comparison, Shopee Products, and other datasets.
+A comprehensive Python library for filtering data using the BrightData API across multiple datasets. This system provides intuitive, type-safe filtering with built-in support for Amazon Products, Amazon-Walmart Comparison, Shopee Products, and other datasets, plus a complete snapshot management system for handling long-running queries.
 
-## Table of Contents
+## 🚀 Features
 
-- [Quick Start](#quick-start)
+- **Multi-Dataset Support**: Amazon Products, Amazon-Walmart Comparison, Shopee Products
+- **Type-Aware Filtering**: Intuitive syntax with automatic validation
+- **Snapshot Management**: Track, monitor, and download long-running queries
+- **Local Record Storage**: Persistent JSON storage for all filter submissions
+- **Real-time Monitoring**: Monitor processing status and handle downloads
+- **Comprehensive Documentation**: Complete examples and API reference
+- **Jupyter Integration**: Ready-to-use notebooks with working examples
+
+## 📦 Installation
+
+```bash
+git clone git@github.com:callzhang/BrightData.git
+cd BrightData
+pip install -r requirements.txt  # If requirements.txt exists
+```
+
+## ⚡ Quick Start
+
+```python
+from util import BrightDataFilter, AMAZON_FIELDS as AF, get_brightdata_api_key
+
+# Initialize the filter for Amazon Products dataset
+api_key = get_brightdata_api_key()
+amazon_filter = BrightDataFilter(api_key, "gd_l7q7dkf244hwjntr0")
+
+# Create a simple filter using dataset-specific fields
+high_rated_products = AF.rating >= 4.5
+
+# Execute the search
+result = amazon_filter.search_data(high_rated_products, records_limit=1000)
+print(f"Found products with snapshot ID: {result['snapshot_id']}")
+```
+
+## ⚙️ Configuration
+
+### 1. API Key Setup
+Create a `secrets.yaml` file in your project root:
+
+```yaml
+brightdata:
+  api_key: "your_brightdata_api_key_here"
+```
+
+### 2. Dataset IDs
+The system supports multiple datasets with their specific IDs:
+
+- **Amazon Products**: `gd_l7q7dkf244hwjntr0`
+- **Amazon-Walmart Comparison**: `gd_m4l6s4mn2g2rkx9lia`  
+- **Shopee Products**: `gd_lk122xxgf86xf97py`
+
+### 3. Storage Configuration
+Local snapshot records are stored in `snapshot_records/` by default. You can customize this:
+
+```python
+# Custom storage directory
+amazon_filter = BrightDataFilter(api_key, "gd_l7q7dkf244hwjntr0", "my_snapshots")
+```
+
+## 📋 Table of Contents
+
+- [Quick Start](#-quick-start)
+- [Configuration](#-configuration)
 - [Multi-Dataset Support](#multi-dataset-support)
 - [Filter Syntax Overview](#filter-syntax-overview)
 - [Type-Aware Filter Fields](#type-aware-filter-fields)
 - [Operators](#operators)
 - [Logical Operations](#logical-operations)
-- [Configuration](#configuration)
 - [Examples](#examples)
+- [Snapshot Management](#snapshot-management)
 - [API Reference](#api-reference)
+- [Contributing](#-contributing)
 
 ## Quick Start
 
@@ -759,3 +821,46 @@ See [SNAPSHOT_MANAGER_README.md](SNAPSHOT_MANAGER_README.md) for complete docume
 This comprehensive filter system provides powerful, intuitive tools for data analysis using the BrightData API across multiple datasets. The multi-dataset architecture with type-aware syntax makes complex filters readable and maintainable, enabling efficient analysis for various market research and product strategy applications. With built-in support for Amazon Products, Amazon-Walmart Comparison, Shopee Products, and extensible architecture for additional datasets, the system scales to meet diverse analytical needs across global e-commerce platforms.
 
 The integrated snapshot management system ensures you never lose track of submitted filters and can efficiently handle the long processing times and download management required for large-scale data analysis.
+
+## 🤝 Contributing
+
+We welcome contributions! Here's how you can help:
+
+### Adding New Datasets
+1. Create a new dataset schema in `util/dataset_registry.py`
+2. Add field definitions with proper types and operators
+3. Update documentation with dataset-specific examples
+4. Add tests for the new dataset
+
+### Improving Documentation
+1. Update README.md with new features
+2. Add examples to `util/multi_dataset_examples.py`
+3. Create Jupyter notebooks for new use cases
+4. Improve error messages and help text
+
+### Bug Reports & Feature Requests
+1. Open an issue describing the problem or feature
+2. Include code examples and error messages
+3. Specify the dataset and filter conditions used
+
+### Development Setup
+```bash
+git clone git@github.com:callzhang/BrightData.git
+cd BrightData
+# Create your feature branch
+git checkout -b feature/your-feature-name
+# Make your changes
+git commit -m "Add your feature"
+git push origin feature/your-feature-name
+# Open a pull request
+```
+
+## 📄 License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## 🙏 Acknowledgments
+
+- BrightData for providing the comprehensive API
+- The open-source community for inspiration and tools
+- Contributors who help improve this system
