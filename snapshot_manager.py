@@ -196,24 +196,55 @@ class SnapshotManager:
                 print(f"❌ Snapshot not ready. Status: {metadata.get('status')}")
                 return False
             
-            # Get download URL from metadata
-            download_url = metadata.get("download_url")
-            if not download_url:
-                print("📤 No download URL available, attempting to deliver snapshot...")
+            # Try direct download first using the Snapshot Content API
+            print("📥 Attempting direct download using Snapshot Content API...")
+            
+            # Get dataset_id from local record
+            record_path = self.storage_dir / f"{snapshot_id}.json"
+            if not record_path.exists():
+                print(f"❌ No local record found for {snapshot_id}")
+                return False
+            
+            with open(record_path, 'r') as f:
+                record = json.load(f)
+            
+            dataset_id = record["dataset_id"]
+            
+            try:
+                # Initialize filter for API calls
+                filter_obj = BrightDataFilter(dataset_id, str(self.storage_dir), self.api_key)
                 
-                # Get dataset_id from local record
-                record_path = self.storage_dir / f"{snapshot_id}.json"
-                if not record_path.exists():
-                    print(f"❌ No local record found for {snapshot_id}")
-                    return False
+                # Try direct download using the Snapshot Content API
+                response = filter_obj.download_snapshot_content(snapshot_id, format="json")
                 
-                with open(record_path, 'r') as f:
-                    record = json.load(f)
+                # Create output directory
+                output_path = Path(output_dir)
+                output_path.mkdir(exist_ok=True)
                 
-                dataset_id = record["dataset_id"]
+                # Save file
+                filename = f"{snapshot_id}.json"
+                file_path = output_path / filename
                 
-                # Try to deliver the snapshot with a webhook configuration
-                # This will trigger the delivery process
+                with open(file_path, 'wb') as f:
+                    for chunk in response.iter_content(chunk_size=8192):
+                        f.write(chunk)
+                
+                print(f"✅ Downloaded to: {file_path}")
+                
+                # Update local record with download info
+                record["downloaded_file"] = str(file_path)
+                record["download_time"] = datetime.now().isoformat()
+                
+                with open(record_path, 'w') as f:
+                    json.dump(record, f, indent=2)
+                
+                return True
+                
+            except Exception as e:
+                print(f"❌ Direct download failed: {e}")
+                print("📤 Falling back to deliver snapshot method...")
+                
+                # Fallback to deliver snapshot method
                 try:
                     delivery_config = {
                         "deliver": {
@@ -227,60 +258,15 @@ class SnapshotManager:
                         "compress": False
                     }
                     
-                    # Initialize filter for API calls
-                    filter_obj = BrightDataFilter(dataset_id, str(self.storage_dir), self.api_key)
                     delivery_result = filter_obj.deliver_snapshot(snapshot_id, delivery_config)
                     
                     print(f"✅ Delivery initiated: {delivery_result}")
                     print("⏳ Please wait for delivery to complete, then try downloading again")
                     return False
                     
-                except Exception as e:
-                    print(f"❌ Failed to initiate delivery: {e}")
+                except Exception as delivery_error:
+                    print(f"❌ Failed to initiate delivery: {delivery_error}")
                     return False
-            
-            # Create output directory
-            output_path = Path(output_dir)
-            output_path.mkdir(exist_ok=True)
-            
-            # Download file
-            print(f"📥 Downloading {snapshot_id}...")
-            response = requests.get(download_url, stream=True)
-            response.raise_for_status()
-            
-            # Determine file extension
-            content_type = response.headers.get('content-type', '')
-            if 'json' in content_type:
-                ext = '.json'
-            elif 'csv' in content_type:
-                ext = '.csv'
-            elif 'zip' in content_type:
-                ext = '.zip'
-            else:
-                ext = '.dat'
-            
-            # Save file
-            filename = f"{snapshot_id}{ext}"
-            file_path = output_path / filename
-            
-            with open(file_path, 'wb') as f:
-                for chunk in response.iter_content(chunk_size=8192):
-                    f.write(chunk)
-            
-            print(f"✅ Downloaded to: {file_path}")
-            
-            # Update local record with download info
-            record_path = self.storage_dir / f"{snapshot_id}.json"
-            with open(record_path, 'r') as f:
-                record = json.load(f)
-            
-            record["downloaded_file"] = str(file_path)
-            record["download_time"] = datetime.now().isoformat()
-            
-            with open(record_path, 'w') as f:
-                json.dump(record, f, indent=2)
-            
-            return True
             
         except Exception as e:
             print(f"❌ Download failed: {e}")

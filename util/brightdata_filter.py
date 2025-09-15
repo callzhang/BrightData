@@ -468,6 +468,53 @@ class BrightDataFilter:
         except requests.exceptions.RequestException as e:
             raise Exception(f"Failed to deliver snapshot: {str(e)}")
     
+    def download_snapshot_content(self, snapshot_id: str, format: str = "json", 
+                                 compress: bool = False, batch_size: int = None, 
+                                 part: int = None) -> requests.Response:
+        """Download snapshot content directly using the BrightData API
+        
+        Args:
+            snapshot_id: The snapshot ID to download
+            format: Response format ('json', 'jsonl', 'csv')
+            compress: Whether to compress response in gzip format
+            batch_size: Number of records per batch
+            part: Batch number (starts from 1)
+            
+        Returns:
+            requests.Response object with snapshot content
+            
+        Example:
+            # Download as JSON
+            response = brightdata.download_snapshot_content("snap_123", format="json")
+            data = response.json()
+            
+            # Download as CSV with compression
+            response = brightdata.download_snapshot_content("snap_123", format="csv", compress=True)
+            content = response.text
+        """
+        try:
+            params = {
+                "format": format,
+                "compress": compress
+            }
+            
+            if batch_size is not None:
+                params["batch_size"] = batch_size
+            if part is not None:
+                params["part"] = part
+            
+            response = requests.get(
+                f"{self.base_url}/snapshots/{snapshot_id}/download",
+                headers=self.headers,
+                params=params,
+                timeout=60,  # Longer timeout for downloads
+                stream=True
+            )
+            response.raise_for_status()
+            return response
+        except requests.exceptions.RequestException as e:
+            raise Exception(f"Failed to download snapshot content: {str(e)}")
+    
     def update_snapshot_record(self, snapshot_id: str, metadata: Dict[str, Any] = None, 
                               error: str = None) -> Dict[str, Any]:
         """
