@@ -1,0 +1,112 @@
+```mermaid
+graph TB
+    %% User Interface Layer
+    subgraph "User Interface Layer"
+        UI["Streamlit UI<br/>snapshot_viewer.py"]
+        CLI["CLI Manager<br/>snapshot_manager.py"]
+        JUPYTER["Jupyter Notebooks<br/>demo.ipynb, amazon_strategy.ipynb, embedding_demo.ipynb"]
+    end
+
+    %% Core Application Layer
+    subgraph "Core Application Layer"
+        BDF["BrightDataFilter<br/>brightdata_filter.py"]
+        FC["Filter Criteria<br/>filter_criteria.py"]
+        DR["Dataset Registry<br/>dataset_registry.py"]
+        CM["Config Manager<br/>config.py"]
+        ES["Embedding Server<br/>embedding_server.py"]
+        PA["Product Analyzer<br/>product_analyzer.py"]
+    end
+
+    %% Data Storage Layer
+    subgraph "Data Storage Layer"
+        SR["Snapshot Records<br/>snapshot_records/*.json"]
+        DL["Downloads<br/>data/downloads/*.json"]
+        SEC["Secrets<br/>secrets.yaml"]
+        DS["Dataset Schemas<br/>datasets/*.md"]
+        EC["Embedding Cache<br/>embedding_cache/*.pkl"]
+        AR["Analysis Results<br/>analysis_results/*.json"]
+    end
+
+    %% External API Layer
+    subgraph "External API Layer"
+        BDA["BrightData API<br/>api.brightdata.com"]
+        FILTER["Filter Endpoint<br/>/datasets/filter"]
+        SNAPSHOT["Snapshot Endpoint<br/>/datasets/snapshots"]
+        DOWNLOAD["Download Endpoint<br/>/datasets/snapshots/id/content"]
+    end
+
+    %% Dataset Support
+    subgraph "Supported Datasets"
+        AMAZON["Amazon Products<br/>gd_l7q7dkf244hwjntr0"]
+        AMAZONWALMART["Amazon-Walmart<br/>gd_m4l6s4mn2g2rkx9lia"]
+        SHOPEE["Shopee Products<br/>gd_lk122xxgf86xf97py"]
+    end
+
+    %% User Interactions
+    UI --> BDF
+    CLI --> BDF
+    JUPYTER --> BDF
+    JUPYTER --> ES
+    JUPYTER --> PA
+
+    %% Core Dependencies
+    BDF --> FC
+    BDF --> DR
+    BDF --> CM
+    FC --> DR
+    PA --> ES
+    PA --> BDF
+
+    %% Data Flow
+    BDF --> SR
+    BDF --> DL
+    CM --> SEC
+    DR --> DS
+    ES --> EC
+    PA --> AR
+
+    %% API Communication
+    BDF --> BDA
+    BDA --> FILTER
+    BDA --> SNAPSHOT
+    BDA --> DOWNLOAD
+
+    %% Dataset Integration
+    DR --> AMAZON
+    DR --> AMAZONWALMART
+    DR --> SHOPEE
+
+    %% Key Features
+    subgraph "Key Features"
+        DEDUP["Smart Deduplication<br/>Prevents duplicate queries"]
+        VALID["Type-Aware Validation<br/>Runtime field validation"]
+        MONITOR["Real-time Monitoring<br/>Status tracking"]
+        DOWNLOAD_MGR["Download Management<br/>Cost-aware downloads"]
+        EMBED["Semantic Embeddings<br/>all-MiniLM-L6-v2 model"]
+        SIMILARITY["Product Similarity<br/>Cross-platform analysis"]
+        GAP_ANALYSIS["Category Gap Analysis<br/>Market opportunity identification"]
+    end
+
+    BDF --> DEDUP
+    FC --> VALID
+    BDF --> MONITOR
+    BDF --> DOWNLOAD_MGR
+    ES --> EMBED
+    ES --> SIMILARITY
+    PA --> GAP_ANALYSIS
+
+    %% Styling
+    classDef uiLayer fill:#e1f5fe
+    classDef coreLayer fill:#f3e5f5
+    classDef dataLayer fill:#e8f5e8
+    classDef apiLayer fill:#fff3e0
+    classDef datasetLayer fill:#fce4ec
+    classDef featureLayer fill:#f1f8e9
+
+    class UI,CLI,JUPYTER uiLayer
+    class BDF,FC,DR,CM,ES,PA coreLayer
+    class SR,DL,SEC,DS,EC,AR dataLayer
+    class BDA,FILTER,SNAPSHOT,DOWNLOAD apiLayer
+    class AMAZON,AMAZONWALMART,SHOPEE datasetLayer
+    class DEDUP,VALID,MONITOR,DOWNLOAD_MGR,EMBED,SIMILARITY,GAP_ANALYSIS featureLayer
+```

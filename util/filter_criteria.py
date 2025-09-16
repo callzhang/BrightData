@@ -6,7 +6,7 @@ across multiple datasets including Amazon, Walmart, and other product data sourc
 """
 
 from typing import Any, Union, Optional, Dict
-from .brightdata_filter import FilterCondition, FilterOperator
+from .brightdata import FilterCondition, FilterOperator
 from .dataset_registry import dataset_registry, get_dataset_schema
 
 
@@ -86,7 +86,7 @@ class NumericalFilterField(FilterField):
     
     def in_range(self, min_val: Union[int, float, str], max_val: Union[int, float, str]) -> 'FilterGroup':
         """Create a range filter: min_val <= field <= max_val"""
-        from .brightdata_filter import FilterGroup, LogicalOperator
+        from .brightdata import FilterGroup, LogicalOperator
         return FilterGroup(LogicalOperator.AND, [
             FilterCondition(self.field_name, FilterOperator.GREATER_THAN_EQUAL, str(min_val)),
             FilterCondition(self.field_name, FilterOperator.LESS_THAN_EQUAL, str(max_val))
@@ -173,7 +173,7 @@ class ArrayFilterField(FilterField):
         """
         if isinstance(value, list):
             # For lists, we need to create multiple conditions and combine them with OR
-            from .brightdata_filter import FilterGroup, LogicalOperator
+            from .brightdata import FilterGroup, LogicalOperator
             conditions = [FilterCondition(self.field_name, FilterOperator.ARRAY_INCLUDES, v) for v in value]
             return FilterGroup(LogicalOperator.OR, conditions)
         else:
@@ -189,7 +189,7 @@ class ArrayFilterField(FilterField):
         """
         if isinstance(value, list):
             # For lists, we need to create multiple conditions and combine them with AND
-            from .brightdata_filter import FilterGroup, LogicalOperator
+            from .brightdata import FilterGroup, LogicalOperator
             conditions = [FilterCondition(self.field_name, FilterOperator.NOT_ARRAY_INCLUDES, v) for v in value]
             return FilterGroup(LogicalOperator.AND, conditions)
         else:

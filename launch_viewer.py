@@ -13,9 +13,10 @@ def main():
     print("=" * 50)
     
     # Check if we're in the right directory
-    if not Path("snapshot_records").exists():
-        print("❌ snapshot_records directory not found!")
+    if not Path("data/snapshots").exists():
+        print("❌ data/snapshots directory not found!")
         print("💡 Make sure you're running this from the project root directory.")
+        print("💡 The snapshots have been moved to data/snapshots/ during cleanup.")
         return
     
     # Check if streamlit is installed
@@ -48,3 +49,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

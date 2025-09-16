@@ -66,8 +66,8 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 def load_snapshot_records():
-    """Load all snapshot records from the snapshot_records directory."""
-    records_dir = Path("snapshot_records")
+    """Load all snapshot records from the data/snapshots directory."""
+    records_dir = Path("data/snapshots")
     if not records_dir.exists():
         return []
     
@@ -75,10 +75,30 @@ def load_snapshot_records():
     for file_path in records_dir.glob("*.json"):
         try:
             with open(file_path, 'r') as f:
-                record = json.load(f)
-                record['file_path'] = str(file_path)
+                data = json.load(f)
+                
+                # Handle both list and dictionary formats
+                if isinstance(data, list):
+                    # If it's a list, create a summary record
+                    record = {
+                        'snapshot_id': file_path.stem,
+                        'submission_time': '2025-01-01T00:00:00.000000',  # Default timestamp
+                        'dataset_id': 'unknown',
+                        'status': 'ready',
+                        'records_count': len(data),
+                        'file_type': 'data_list',
+                        'file_path': str(file_path)
+                    }
+                elif isinstance(data, dict):
+                    # If it's a dictionary, use it as is
+                    record = data.copy()
+                    record['file_path'] = str(file_path)
+                else:
+                    # Skip unknown formats
+                    continue
+                    
                 records.append(record)
-        except (json.JSONDecodeError, KeyError):
+        except (json.JSONDecodeError, KeyError, TypeError):
             continue
     
     return sorted(records, key=lambda x: x.get('submission_time', ''), reverse=True)
@@ -150,28 +170,68 @@ def get_snapshot_status_badge(status):
     return f'<span class="status-badge {config["class"]}">{config["icon"]} {status.upper()}</span>'
 
 def load_snapshot_data(snapshot_id):
-    """Load the actual data for a snapshot."""
-    data_file = Path("downloads") / f"{snapshot_id}.json"
-    if data_file.exists():
-        try:
-            return pd.read_json(data_file)
-        except Exception as e:
-            st.error(f"Error loading data: {e}")
-            return None
+    """Load the actual data for a snapshot (supports multiple formats)."""
+    downloads_dir = Path("data/downloads")
+    
+    # Check for different file formats
+    for ext in ['.json', '.csv', '.json.gz', '.csv.gz']:
+        data_file = downloads_dir / f"{snapshot_id}{ext}"
+        if data_file.exists():
+            try:
+                # First, check if the file contains valid data
+                with open(data_file, 'r', encoding='utf-8') as f:
+                    content = f.read().strip()
+                
+                # Check if the content is a status message instead of data
+                if content in ["Snapshot is building. Try again in a few minutes", 
+                              "Snapshot not ready", 
+                              "Snapshot is processing",
+                              "No data available"]:
+                    st.warning(f"⚠️ {content}")
+                    return None
+                
+                # Check if the file is empty
+                if not content:
+                    st.warning("⚠️ Downloaded file is empty")
+                    return None
+                
+                # Try to load the data based on format
+                if ext == '.json':
+                    return pd.read_json(data_file)
+                elif ext == '.csv':
+                    return pd.read_csv(data_file)
+                elif ext == '.json.gz':
+                    return pd.read_json(data_file, compression='gzip')
+                elif ext == '.csv.gz':
+                    return pd.read_csv(data_file, compression='gzip')
+                    
+            except pd.errors.EmptyDataError:
+                st.warning("⚠️ Downloaded file contains no data")
+                return None
+            except pd.errors.JSONDecodeError as e:
+                st.error(f"❌ Invalid JSON format in {data_file}: {e}")
+                st.info("💡 The snapshot might still be building. Try downloading again later.")
+                return None
+            except Exception as e:
+                st.error(f"❌ Error loading data from {data_file}: {e}")
+                return None
+    
     return None
 
 def delete_snapshot_record(snapshot_id):
     """Delete a snapshot record and its associated files."""
     try:
         # Delete the JSON record file
-        record_file = Path("snapshot_records") / f"{snapshot_id}.json"
+        record_file = Path("data/snapshots") / f"{snapshot_id}.json"
         if record_file.exists():
             record_file.unlink()
         
-        # Delete the downloaded data file if it exists
-        data_file = Path("downloads") / f"{snapshot_id}.json"
-        if data_file.exists():
-            data_file.unlink()
+        # Delete the downloaded data file if it exists (check all formats)
+        downloads_dir = Path("data/downloads")
+        for ext in ['.json', '.csv', '.json.gz', '.csv.gz']:
+            data_file = downloads_dir / f"{snapshot_id}{ext}"
+            if data_file.exists():
+                data_file.unlink()
         
         return True
     except Exception as e:
@@ -186,7 +246,7 @@ def update_manual_snapshot_status(snapshot_id):
         
         if metadata:
             # Update the record with new status and metadata
-            record_file = Path("snapshot_records") / f"{snapshot_id}.json"
+            record_file = Path("data/snapshots") / f"{snapshot_id}.json"
             if record_file.exists():
                 with open(record_file, 'r') as f:
                     record = json.load(f)
@@ -331,88 +391,6 @@ def main():
         status_text = " | ".join([f"{status}: {count}" for status, count in status_counts.items()])
         st.sidebar.caption(f"Status: {status_text}")
     
-    # Manual snapshot ID input
-    st.sidebar.divider()
-    st.sidebar.subheader("➕ Add Snapshot Manually")
-    
-    with st.sidebar.form("add_snapshot_form"):
-        manual_snapshot_id = st.text_input(
-            "Snapshot ID", 
-            placeholder="e.g., snap_abc123...",
-            help="Enter a snapshot ID to add manually"
-        )
-        
-        col1, col2 = st.columns(2)
-        with col1:
-            if st.form_submit_button("➕ Add Snapshot"):
-                if manual_snapshot_id:
-                    # Try to get metadata from API first
-                    with st.spinner("Retrieving snapshot details..."):
-                        metadata = get_snapshot_metadata(manual_snapshot_id)
-                        
-                        if metadata:
-                            # Create record with API metadata
-                            manual_record = {
-                                'snapshot_id': manual_snapshot_id,
-                                'dataset_id': metadata.get('dataset_id', 'unknown'),
-                                'records_limit': metadata.get('dataset_size', 1000),
-                                'submission_time': datetime.now().isoformat(),
-                                'created_time': metadata.get('created'),
-                                'status': metadata.get('status', 'submitted'),  # Default to submitted instead of unknown
-                                'dataset_size': metadata.get('dataset_size'),
-                                'file_size': metadata.get('file_size'),
-                                'cost': metadata.get('cost'),
-                                'filter_criteria': {
-                                    'manual_entry': True,
-                                    'description': 'Manually added snapshot',
-                                    'filters': [],
-                                    'original_criteria': None,
-                                    'api_retrieved': True
-                                },
-                                'metadata': metadata
-                            }
-                            st.sidebar.success("✅ Retrieved details from API!")
-                        else:
-                            # If API fails, don't create the record - show error instead
-                            st.sidebar.error("❌ Could not retrieve snapshot from API. Please check the snapshot ID.")
-                            return
-                        
-                        # Save the manual record
-                        record_file = Path("snapshot_records") / f"{manual_snapshot_id}.json"
-                        try:
-                            with open(record_file, 'w') as f:
-                                json.dump(manual_record, f, indent=2)
-                            st.sidebar.success(f"✅ Added snapshot: {manual_snapshot_id[:12]}...")
-                            st.rerun()
-                        except Exception as e:
-                            st.sidebar.error(f"❌ Error adding snapshot: {e}")
-                else:
-                    st.sidebar.error("❌ Please enter a snapshot ID")
-        
-        with col2:
-            if st.form_submit_button("🔍 Retrieve Details"):
-                if manual_snapshot_id:
-                    with st.spinner("Retrieving details..."):
-                        # Try to get filter details
-                        filter_details = get_snapshot_filter_details(manual_snapshot_id)
-                        metadata = get_snapshot_metadata(manual_snapshot_id)
-                        
-                        if metadata:
-                            st.sidebar.success("✅ Retrieved metadata!")
-                            st.sidebar.json(metadata)
-                        else:
-                            st.sidebar.warning("⚠️ No metadata found")
-                        
-                        if filter_details:
-                            st.sidebar.success("✅ Filter details found!")
-                            st.sidebar.json(filter_details)
-                        else:
-                            st.sidebar.info("ℹ️ No filter details in API response")
-                else:
-                    st.sidebar.error("❌ Please enter Snapshot ID")
-    
-    st.sidebar.divider()
-    
     # Display all snapshots in sidebar
     for i, record in enumerate(records):
         status = record.get('status', 'submitted')  # Default to submitted instead of unknown
@@ -440,6 +418,9 @@ def main():
         # Get records limit
         records_limit = record.get('records_limit', 'N/A')
         
+        # Get title (use snapshot ID as fallback)
+        title = record.get('title', f"Snapshot {record['snapshot_id'][:12]}...")
+        
         # Create clickable card for each snapshot in sidebar
         card_style = ""
         if is_selected:
@@ -458,9 +439,9 @@ def main():
             }
             icon = status_icons.get(status, '📋')
             
-            # Create clickable area
+            # Create clickable area with title
             if st.sidebar.button(
-                f"{icon} {status.upper()}\n{record['snapshot_id'][:12]}...\n[{records_limit} Records] {filter_count} filters\n{date_str}",
+                f"{icon} {status.upper()}\n{title}\n[{records_limit} Records] {filter_count} filters\n{date_str}",
                 key=f"select_{i}",
                 help="Click to select this snapshot",
                 use_container_width=True
@@ -534,12 +515,69 @@ def main():
     
     st.divider()
     
+    # Title and Description editing section
+    
     # Selected Snapshot Details - Basic Information and Filter Criteria side by side
     col1, col2 = st.columns([1, 1])
     
     with col1:
         # Basic info
         st.subheader("📊 Basic Information")
+        
+        # Title and Description (editable in Basic Information)
+        current_title = selected_record.get('title', f"Snapshot {snapshot_id[:12]}...")
+        current_description = selected_record.get('description', 'No description available')
+        
+        # Editable title and description
+        with st.form(f"edit_metadata_{snapshot_id}"):
+            col_title, col_desc = st.columns([1, 2])
+            
+            with col_title:
+                new_title = st.text_input(
+                    "📌 Title",
+                    value=current_title,
+                    help="Give your snapshot a descriptive title",
+                    key=f"title_{snapshot_id}"
+                )
+            
+            with col_desc:
+                new_description = st.text_area(
+                    "📄 Description",
+                    value=current_description,
+                    height=80,
+                    help="Describe what this snapshot contains or its purpose",
+                    key=f"description_{snapshot_id}"
+                )
+            
+            # Save button
+            col_save1, col_save2 = st.columns([1, 3])
+            with col_save1:
+                save_metadata = st.form_submit_button("💾 Save", type="primary")
+            
+            # Handle saving metadata
+            if save_metadata:
+                if new_title != current_title or new_description != current_description:
+                    try:
+                        # Update the record
+                        selected_record['title'] = new_title
+                        selected_record['description'] = new_description
+                        selected_record['last_modified'] = datetime.now().isoformat()
+                        
+                        # Save back to file
+                        record_file = Path("data/snapshots") / f"{snapshot_id}.json"
+                        with open(record_file, 'w') as f:
+                            json.dump(selected_record, f, indent=2)
+                        
+                        st.success("✅ Metadata updated successfully!")
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"❌ Error saving metadata: {e}")
+                else:
+                    st.info("ℹ️ No changes to save")
+        
+        st.divider()
+        
+        # Basic metadata
         info_data = {
             "Snapshot ID": selected_record['snapshot_id'],
             "Dataset ID": selected_record.get('dataset_id', 'N/A'),
@@ -550,11 +588,170 @@ def main():
             "Cost": selected_record.get('metadata', {}).get('cost', 'N/A')
         }
         
+        # Add last modified time if available
+        last_modified = selected_record.get('last_modified')
+        if last_modified:
+            try:
+                modified_time = datetime.fromisoformat(last_modified.replace('Z', '+00:00'))
+                info_data["Last Modified"] = modified_time.strftime('%Y-%m-%d %H:%M:%S')
+            except:
+                info_data["Last Modified"] = last_modified
+        
         for key, value in info_data.items():
             if key == "Status":
                 st.markdown(f"**{key}:** {get_snapshot_status_badge(value)}", unsafe_allow_html=True)
             else:
                 st.write(f"**{key}:** {value}")
+        
+        st.divider()
+        
+        # Actions section (moved from separate section)
+        st.subheader("🛠️ Actions")
+        
+        # Check if data is available (support multiple formats)
+        downloads_dir = Path("data/downloads")
+        data_file = None
+        data_available = False
+        
+        # Check for different file formats
+        for ext in ['.json', '.csv', '.json.gz', '.csv.gz']:
+            potential_file = downloads_dir / f"{snapshot_id}{ext}"
+            if potential_file.exists():
+                data_file = potential_file
+                data_available = True
+                break
+        
+        if data_available:
+            st.success("✅ Data available for analysis")
+        else:
+            st.warning("⚠️ Data not downloaded yet")
+            
+            # Download form with snapshot ID requirement
+            with st.form(f"download_form_{snapshot_id}"):
+                st.write("**📥 Download Snapshot Data**")
+                st.write("⚠️ **Important**: Downloading data incurs costs. Only download when needed.")
+                
+                
+                # Pre-fill with current snapshot ID
+                download_snapshot_id = st.text_input(
+                    "Snapshot ID to Download",
+                    value=snapshot_id,
+                    help="Enter the snapshot ID you want to download. This will incur costs.",
+                    disabled=True  # Pre-filled and disabled to prevent mistakes
+                )
+                
+                # Download options
+                download_format = st.selectbox(
+                    "Download Format",
+                    options=["json", "csv"],
+                    index=0,
+                    help="Choose the format for downloaded data"
+                )
+                
+                compress_data = st.checkbox(
+                    "Compress Download",
+                    value=False,
+                    help="Compress the downloaded file to reduce size"
+                )
+                
+                col_download1, col_download2 = st.columns(2)
+                with col_download1:
+                    download_submitted = st.form_submit_button(
+                        "📥 Download Data",
+                        type="primary",
+                        help="This will download the snapshot data and may incur costs"
+                    )
+                
+                with col_download2:
+                    if st.form_submit_button("❌ Cancel"):
+                        st.rerun()
+                
+                # Handle download
+                if download_submitted:
+                    if not download_snapshot_id or not download_snapshot_id.strip():
+                        st.error("❌ Snapshot ID is required for download")
+                        st.info("💡 Please provide a valid snapshot ID to proceed")
+                        return
+                    
+                    # Additional validation
+                    if not download_snapshot_id.startswith('snap_'):
+                        st.error("❌ Invalid snapshot ID format")
+                        st.info("💡 Snapshot ID should start with 'snap_'")
+                        return
+                    
+                    try:
+                        # Initialize BrightData filter
+                        dataset_id = selected_record.get('dataset_id')
+                        if not dataset_id:
+                            st.error("❌ No dataset ID found in record")
+                            return
+                        
+                        brightdata = BrightDataFilter(dataset_id)
+                        
+                        # Show download progress
+                        with st.spinner(f"Downloading {download_snapshot_id} in {download_format.upper()} format..."):
+                            # Download the snapshot content
+                            response = brightdata.download_snapshot_content(
+                                download_snapshot_id,
+                                format=download_format,
+                                compress=compress_data
+                            )
+                            
+                            if response.status_code == 200:
+                                # Check if the response contains actual data or a status message
+                                content = response.text.strip()
+                                
+                                # Check for status messages
+                                if content in ["Snapshot is building. Try again in a few minutes", 
+                                              "Snapshot not ready", 
+                                              "Snapshot is processing",
+                                              "No data available"]:
+                                    st.warning(f"⚠️ {content}")
+                                    st.info("💡 The snapshot is still being processed. Please wait and try again later.")
+                                    return
+                                
+                                # Save the downloaded data
+                                downloads_dir = Path("data/downloads")
+                                downloads_dir.mkdir(exist_ok=True)
+                                
+                                file_extension = f".{download_format}"
+                                if compress_data:
+                                    file_extension += ".gz"
+                                
+                                file_path = downloads_dir / f"{download_snapshot_id}{file_extension}"
+                                
+                                with open(file_path, 'wb') as f:
+                                    f.write(response.content)
+                                
+                                # Update the record to mark as downloaded
+                                record_file = Path("data/snapshots") / f"{download_snapshot_id}.json"
+                                if record_file.exists():
+                                    with open(record_file, 'r') as f:
+                                        record = json.load(f)
+                                    
+                                    record['downloaded'] = True
+                                    record['download_time'] = datetime.now().isoformat()
+                                    record['download_format'] = download_format
+                                    record['download_file'] = str(file_path)
+                                    
+                                    with open(record_file, 'w') as f:
+                                        json.dump(record, f, indent=2)
+                                
+                                st.success(f"✅ Successfully downloaded {download_snapshot_id}!")
+                                st.info(f"📁 File saved to: `{file_path}`")
+                                st.info(f"📊 Size: {len(response.content) / 1024 / 1024:.2f} MB")
+                                
+                                # Refresh the page to show updated status
+                                st.rerun()
+                                
+                            else:
+                                st.error(f"❌ Download failed: HTTP {response.status_code}")
+                                if response.text:
+                                    st.error(f"Error details: {response.text}")
+                                    
+                    except Exception as e:
+                        st.error(f"❌ Download error: {str(e)}")
+                        st.info("💡 Make sure the snapshot is ready and you have sufficient credits")
     
     with col2:
         # Filter Criteria
@@ -595,37 +792,6 @@ def main():
                 st.json(filter_criteria)
         else:
             st.info("No filter criteria available")
-    
-    # Actions section below the two sections
-    st.subheader("🛠️ Actions")
-    
-    # Check if data is available
-    data_file = Path("downloads") / f"{snapshot_id}.json"
-    data_available = data_file.exists()
-    
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        if data_available:
-            st.success("✅ Data available for analysis")
-        else:
-            st.warning("⚠️ Data not downloaded yet")
-            if st.button("📥 Download Data"):
-                try:
-                    # Initialize BrightData filter
-                    dataset_id = selected_record.get('dataset_id')
-                    if dataset_id:
-                        brightdata = BrightDataFilter(dataset_id)
-                        
-                        # Try to download
-                        with st.spinner("Downloading data..."):
-                            # This would use the snapshot manager functionality
-                            st.info("💡 Use the snapshot manager to download data:")
-                            st.code(f"python snapshot_manager.py -d")
-                    else:
-                        st.error("No dataset ID found in record")
-                except Exception as e:
-                    st.error(f"Error: {e}")
     
     with col2:
         # Delete button with confirmation

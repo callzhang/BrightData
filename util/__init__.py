@@ -5,7 +5,7 @@ This package contains core functionality for data filtering, analysis, and strat
 using the BrightData API across multiple datasets.
 """
 
-from .brightdata_filter import (
+from .brightdata import (
     BrightDataFilter,
     FilterOperator,
     LogicalOperator,

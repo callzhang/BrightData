@@ -173,7 +173,7 @@ class SnapshotManager:
                 elif status in ["scheduled", "building"]:
                     print("⏳ Still processing...")
     
-    def download_snapshot(self, snapshot_id: str, output_dir: str = "downloads") -> bool:
+    def download_snapshot(self, snapshot_id: str, output_dir: str = "data/downloads") -> bool:
         """
         Download a ready snapshot
         
@@ -272,21 +272,6 @@ class SnapshotManager:
             print(f"❌ Download failed: {e}")
             return False
     
-    def download_ready_snapshots(self, output_dir: str = "downloads"):
-        """Download all ready snapshots"""
-        records = self.list_records()
-        ready_snapshots = [r for r in records if r["status"] == "ready"]
-        
-        if not ready_snapshots:
-            print("📭 No ready snapshots to download")
-            return
-        
-        print(f"📥 Found {len(ready_snapshots)} ready snapshots")
-        
-        for record in ready_snapshots:
-            snapshot_id = record["snapshot_id"]
-            print(f"\n--- Downloading {snapshot_id} ---")
-            self.download_snapshot(snapshot_id, output_dir)
     
     def view_downloaded_data(self, snapshot_id: str, max_lines: int = 20):
         """View downloaded data for a snapshot"""
@@ -369,11 +354,11 @@ def main():
     parser = argparse.ArgumentParser(description="BrightData Snapshot Manager")
     parser.add_argument("--list", "-l", action="store_true", help="List all snapshot records")
     parser.add_argument("--status", "-s", action="store_true", help="Check status of all snapshots")
-    parser.add_argument("--download", "-d", action="store_true", help="Download ready snapshots")
+    parser.add_argument("--download", "-d", type=str, help="Download specific snapshot by ID")
     parser.add_argument("--view", "-v", type=str, help="View downloaded data for snapshot ID")
     parser.add_argument("--monitor", "-m", action="store_true", help="Monitor processing snapshots")
     parser.add_argument("--storage-dir", type=str, default="snapshot_records", help="Storage directory for records")
-    parser.add_argument("--output-dir", type=str, default="downloads", help="Output directory for downloads")
+    parser.add_argument("--output-dir", type=str, default="data/downloads", help="Output directory for downloads")
     parser.add_argument("--lines", type=int, default=20, help="Number of lines to show when viewing data")
     
     args = parser.parse_args()
@@ -393,7 +378,12 @@ def main():
         manager.check_all_status()
     
     if args.download:
-        manager.download_ready_snapshots(args.output_dir)
+        print(f"📥 Downloading snapshot: {args.download}")
+        success = manager.download_snapshot(args.download, args.output_dir)
+        if success:
+            print(f"✅ Successfully downloaded {args.download}")
+        else:
+            print(f"❌ Failed to download {args.download}")
     
     if args.view:
         manager.view_downloaded_data(args.view, args.lines)
@@ -407,7 +397,7 @@ def main():
         print("\n💡 Quick start:")
         print("  python snapshot_manager.py --list    # List all snapshots")
         print("  python snapshot_manager.py --status  # Check all statuses")
-        print("  python snapshot_manager.py --download # Download ready snapshots")
+        print("  python snapshot_manager.py --download <snapshot_id> # Download specific snapshot")
 
 
 if __name__ == "__main__":

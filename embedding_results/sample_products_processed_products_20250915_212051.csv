@@ -1,0 +1,11 @@
+id,title,brand,category,platform,price,rating,description
+embedding_0_0,iPhone 15 Pro 128GB,Apple,Electronics,sample,,4.5,Latest iPhone with titanium design and A17 Pro chip
+embedding_0_1,Samsung Galaxy S24 Ultra,Samsung,Electronics,sample,,4.3,Flagship Android phone with S Pen and advanced camera
+embedding_0_2,MacBook Pro 14-inch M3 Pro,Apple,Computers,sample,,4.7,Professional laptop with M3 Pro chip and Liquid Retina XDR display
+embedding_0_3,Dell XPS 13 Laptop,Dell,Computers,sample,,4.2,Ultra-thin laptop with InfinityEdge display
+embedding_0_4,Sony WH-1000XM5 Headphones,Sony,Audio,sample,,4.6,Noise-canceling wireless headphones with 30-hour battery
+embedding_0_5,Bose QuietComfort 45,Bose,Audio,sample,,4.4,Premium noise-canceling headphones with comfortable fit
+embedding_0_6,Nintendo Switch OLED,Nintendo,Gaming,sample,,4.5,Handheld gaming console with OLED screen
+embedding_0_7,PlayStation 5,Sony,Gaming,sample,,4.8,Next-generation gaming console with 4K gaming
+embedding_0_8,iPad Air 5th Gen,Apple,Tablets,sample,,4.4,Powerful tablet with M1 chip and 10.9-inch display
+embedding_0_9,Samsung Galaxy Tab S9,Samsung,Tablets,sample,,4.3,Android tablet with S Pen and AMOLED display

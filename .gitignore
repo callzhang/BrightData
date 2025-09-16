@@ -45,10 +45,14 @@ secrets.yaml
 *.key
 *.pem
 
-# Snapshot records and downloads
-snapshot_records/
+# Data and snapshots
+data/snapshots/
 downloads/
 test_snapshots/
+
+# Embedding cache and results
+embedding_cache/
+embedding_use_cases_results_*.json
 
 # OS
 .DS_Store
@@ -69,3 +73,5 @@ logs/
 
 # Meta directories with embedded repos
 meta/
+amazon_strategy.ipynb
+.cursor/

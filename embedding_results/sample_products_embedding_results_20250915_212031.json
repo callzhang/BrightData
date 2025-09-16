@@ -1,0 +1,60 @@
+{
+  "csv_file": "sample_products.csv",
+  "total_rows": 10,
+  "processed_products": 0,
+  "failed_products": 10,
+  "platform": "sample",
+  "column_mapping": {
+    "title": "title",
+    "brand": "brand",
+    "category": "category",
+    "price": "price",
+    "rating": "rating",
+    "description": "description",
+    "platform": "sample"
+  },
+  "processing_timestamp": "2025-09-15T21:20:31.840718",
+  "processed_products_list": [],
+  "failed_products_list": [
+    {
+      "row": 0,
+      "error": "'ProductEmbedding' object has no attribute 'price'"
+    },
+    {
+      "row": 1,
+      "error": "'ProductEmbedding' object has no attribute 'price'"
+    },
+    {
+      "row": 2,
+      "error": "'ProductEmbedding' object has no attribute 'price'"
+    },
+    {
+      "row": 3,
+      "error": "'ProductEmbedding' object has no attribute 'price'"
+    },
+    {
+      "row": 4,
+      "error": "'ProductEmbedding' object has no attribute 'price'"
+    },
+    {
+      "row": 5,
+      "error": "'ProductEmbedding' object has no attribute 'price'"
+    },
+    {
+      "row": 6,
+      "error": "'ProductEmbedding' object has no attribute 'price'"
+    },
+    {
+      "row": 7,
+      "error": "'ProductEmbedding' object has no attribute 'price'"
+    },
+    {
+      "row": 8,
+      "error": "'ProductEmbedding' object has no attribute 'price'"
+    },
+    {
+      "row": 9,
+      "error": "'ProductEmbedding' object has no attribute 'price'"
+    }
+  ]
+}
