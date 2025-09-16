@@ -95,10 +95,10 @@ def check_snapshot_status(snapshot_id, dataset_id):
 
 def update_snapshot_status(record):
     """Update the status of a snapshot record if it's not completed."""
-    current_status = record.get('status', 'unknown')
+    current_status = record.get('status', 'submitted')  # Default to submitted instead of unknown
     
-    # Only check status for non-completed snapshots
-    if current_status in ['submitted', 'processing', 'scheduled']:
+    # Check status for non-completed snapshots or unknown status
+    if current_status in ['submitted', 'processing', 'scheduled', 'unknown']:
         try:
             metadata = get_snapshot_metadata(record['snapshot_id'])
             if metadata:
@@ -323,7 +323,7 @@ def main():
     # Status summary in sidebar
     status_counts = {}
     for record in records:
-        status = record.get('status', 'unknown')
+        status = record.get('status', 'submitted')  # Default to submitted instead of unknown
         status_counts[status] = status_counts.get(status, 0) + 1
     
     # Display status summary
@@ -358,7 +358,7 @@ def main():
                                 'records_limit': metadata.get('dataset_size', 1000),
                                 'submission_time': datetime.now().isoformat(),
                                 'created_time': metadata.get('created'),
-                                'status': metadata.get('status', 'unknown'),
+                                'status': metadata.get('status', 'submitted'),  # Default to submitted instead of unknown
                                 'dataset_size': metadata.get('dataset_size'),
                                 'file_size': metadata.get('file_size'),
                                 'cost': metadata.get('cost'),
@@ -373,28 +373,9 @@ def main():
                             }
                             st.sidebar.success("✅ Retrieved details from API!")
                         else:
-                            # Create basic record if API fails
-                            manual_record = {
-                                'snapshot_id': manual_snapshot_id,
-                                'dataset_id': 'unknown',
-                                'records_limit': 1000,
-                                'submission_time': datetime.now().isoformat(),
-                                'status': 'unknown',
-                                'filter_criteria': {
-                                    'manual_entry': True,
-                                    'description': 'Manually added snapshot',
-                                    'filters': [],
-                                    'original_criteria': None,
-                                    'api_retrieved': False
-                                },
-                                'metadata': {
-                                    'cost': None,
-                                    'delivery_url': None,
-                                    'download_url': None,
-                                    'status': 'unknown'
-                                }
-                            }
-                            st.sidebar.warning("⚠️ Could not retrieve from API, created basic record")
+                            # If API fails, don't create the record - show error instead
+                            st.sidebar.error("❌ Could not retrieve snapshot from API. Please check the snapshot ID.")
+                            return
                         
                         # Save the manual record
                         record_file = Path("snapshot_records") / f"{manual_snapshot_id}.json"
@@ -434,7 +415,7 @@ def main():
     
     # Display all snapshots in sidebar
     for i, record in enumerate(records):
-        status = record.get('status', 'unknown')
+        status = record.get('status', 'submitted')  # Default to submitted instead of unknown
         date = record.get('submission_time', 'Unknown date')
         is_selected = st.session_state.get('selected_snapshot', {}).get('snapshot_id') == record['snapshot_id']
         
@@ -540,15 +521,15 @@ def main():
         st.metric("📊 Total Snapshots", len(records))
     
     with col2:
-        completed_count = sum(1 for r in records if r.get('status') in ['completed', 'ready'])
+        completed_count = sum(1 for r in records if r.get('status', 'submitted') in ['completed', 'ready'])
         st.metric("✅ Completed", completed_count)
     
     with col3:
-        processing_count = sum(1 for r in records if r.get('status') in ['submitted', 'processing', 'building'])
+        processing_count = sum(1 for r in records if r.get('status', 'submitted') in ['submitted', 'processing', 'building'])
         st.metric("⏳ Processing", processing_count)
     
     with col4:
-        failed_count = sum(1 for r in records if r.get('status') == 'failed')
+        failed_count = sum(1 for r in records if r.get('status', 'submitted') == 'failed')
         st.metric("❌ Failed", failed_count)
     
     st.divider()
@@ -564,7 +545,7 @@ def main():
             "Dataset ID": selected_record.get('dataset_id', 'N/A'),
             "Records Limit": selected_record.get('records_limit', 'N/A'),
             "Submission Time": selected_record.get('submission_time', 'N/A'),
-            "Status": selected_record.get('status', 'unknown'),
+            "Status": selected_record.get('status', 'submitted'),  # Default to submitted instead of unknown
             "Completion Time": selected_record.get('completion_time', 'N/A'),
             "Cost": selected_record.get('metadata', {}).get('cost', 'N/A')
         }
