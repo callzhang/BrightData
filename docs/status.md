@@ -31,6 +31,16 @@
   - Updated all documentation and references
   - Backward compatibility maintained for existing data
 
+#### 6. Improved Title and Description Editing UX
+- **Status**: ✅ Completed
+- **Impact**: High - Better user experience for metadata editing
+- **Features**:
+  - Removed form wrapper for cleaner interface
+  - Moved title and description into basic metadata section
+  - Implemented automatic saving when fields change
+  - Removed manual save button requirement
+  - Immediate feedback when changes are saved
+
 ### Major Features Completed (2025-09-15)
 
 #### 1. Title and Description Management System
