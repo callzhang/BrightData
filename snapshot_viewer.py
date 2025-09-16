@@ -587,6 +587,11 @@ def main():
                 else:
                     st.write("**Original Filter Criteria:** Not provided")
             else:
+                # Show description if available
+                description = selected_record.get('description')
+                if description:
+                    st.write(f"**Description:** {description}")
+                    st.divider()
                 st.json(filter_criteria)
         else:
             st.info("No filter criteria available")

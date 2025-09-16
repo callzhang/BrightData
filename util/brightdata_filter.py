@@ -192,7 +192,7 @@ class BrightDataFilter:
         
         self.base_url = "https://api.brightdata.com/datasets"
         self.headers = {
-            "Authorization": f"Bearer {api_key}",
+            "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json"
         }
         
@@ -339,6 +339,10 @@ class BrightDataFilter:
                     with open(snapshot_file, 'r') as f:
                         record = json.load(f)
                     
+                    # Skip if record is None or empty
+                    if not record:
+                        continue
+                    
                     # Check if dataset matches
                     if record.get('dataset_id') != self.dataset_id:
                         continue
@@ -353,7 +357,7 @@ class BrightDataFilter:
                         return {
                             'snapshot_id': record.get('snapshot_id'),
                             'status': record.get('status'),
-                            'cost': record.get('metadata', {}).get('cost'),
+                            'cost': record.get('metadata', {}).get('cost') if record.get('metadata') else None,
                             'submission_time': record.get('submission_time'),
                             'record_path': str(snapshot_file)
                         }
@@ -430,7 +434,8 @@ class BrightDataFilter:
     
     def search_data(self, 
                     filter_obj: Union[FilterCondition, FilterGroup], 
-                    records_limit: int = 1000) -> Dict[str, Any]:
+                    records_limit: int = 1000,
+                    description: str = None) -> Dict[str, Any]:
         """
         Execute the search with the provided filter and save local record.
         Checks for existing snapshots with the same conditions to avoid duplicates.
@@ -438,6 +443,7 @@ class BrightDataFilter:
         Args:
             filter_obj: Filter condition or group
             records_limit: Maximum number of records to return
+            description: Optional description of what this snapshot contains
             
         Returns:
             API response with snapshot_id and local record path
@@ -478,7 +484,7 @@ class BrightDataFilter:
             snapshot_id = api_response.get("snapshot_id")
             if snapshot_id:
                 submission_time = datetime.now().isoformat()
-                record_path = self._save_snapshot_record(snapshot_id, filter_obj, records_limit, submission_time)
+                record_path = self._save_snapshot_record(snapshot_id, filter_obj, records_limit, submission_time, description)
                 
                 # Add local record info to response
                 api_response["local_record_path"] = record_path
@@ -502,7 +508,7 @@ class BrightDataFilter:
             raise Exception(f"API request failed: {str(e)}")
     
     def _save_snapshot_record(self, snapshot_id: str, filter_obj: Union[FilterCondition, FilterGroup], 
-                             records_limit: int, submission_time: str) -> str:
+                             records_limit: int, submission_time: str, description: str = None) -> str:
         """
         Save a local record of the snapshot submission.
         
@@ -511,15 +517,21 @@ class BrightDataFilter:
             filter_obj: The filter that was submitted
             records_limit: The records limit that was requested
             submission_time: Timestamp when the filter was submitted
+            description: Optional description of what this snapshot contains
             
         Returns:
             Path to the saved record file
         """
+        # Generate a description if none provided
+        if description is None:
+            description = self._generate_filter_description(filter_obj)
+        
         record = {
             "snapshot_id": snapshot_id,
             "submission_time": submission_time,
             "dataset_id": self.dataset_id,
             "records_limit": records_limit,
+            "description": description,
             "filter_criteria": filter_obj.to_dict(),
             "status": "submitted",
             "metadata": None,
@@ -532,6 +544,77 @@ class BrightDataFilter:
             json.dump(record, f, indent=2)
         
         return file_path
+    
+    def _generate_filter_description(self, filter_obj: Union[FilterCondition, FilterGroup]) -> str:
+        """
+        Generate a human-readable description from filter criteria.
+        
+        Args:
+            filter_obj: The filter object to describe
+            
+        Returns:
+            A human-readable description of the filter
+        """
+        try:
+            if isinstance(filter_obj, FilterCondition):
+                return self._describe_condition(filter_obj)
+            elif isinstance(filter_obj, FilterGroup):
+                return self._describe_group(filter_obj)
+            else:
+                return "Custom filter criteria"
+        except Exception:
+            return "Filter criteria"
+    
+    def _describe_condition(self, condition: FilterCondition) -> str:
+        """Describe a single filter condition."""
+        field = condition.field
+        operator = condition.operator
+        value = condition.value
+        
+        # Map operators to human-readable text
+        operator_map = {
+            'eq': 'equals',
+            'ne': 'not equals',
+            'gt': 'greater than',
+            'gte': 'greater than or equal to',
+            'lt': 'less than',
+            'lte': 'less than or equal to',
+            'in': 'in',
+            'nin': 'not in',
+            'includes': 'includes',
+            'regex': 'matches pattern'
+        }
+        
+        op_text = operator_map.get(operator, operator)
+        
+        # Format value for display
+        if isinstance(value, list):
+            value_text = f"[{', '.join(map(str, value))}]"
+        elif isinstance(value, str):
+            value_text = f'"{value}"'
+        else:
+            value_text = str(value)
+        
+        return f"{field} {op_text} {value_text}"
+    
+    def _describe_group(self, group: FilterGroup) -> str:
+        """Describe a filter group."""
+        if not group.conditions:
+            return "Empty filter group"
+        
+        if len(group.conditions) == 1:
+            return self._describe_condition(group.conditions[0])
+        
+        # For multiple conditions, create a summary
+        conditions_text = []
+        for condition in group.conditions[:3]:  # Limit to first 3 conditions
+            conditions_text.append(self._describe_condition(condition))
+        
+        if len(group.conditions) > 3:
+            conditions_text.append(f"... and {len(group.conditions) - 3} more conditions")
+        
+        operator_text = " AND " if group.operator == "AND" else " OR "
+        return operator_text.join(conditions_text)
     
     def get_snapshot_metadata(self, snapshot_id: str) -> Dict[str, Any]:
         """
