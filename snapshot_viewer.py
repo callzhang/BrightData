@@ -524,56 +524,46 @@ def main():
         # Basic info
         st.subheader("📊 Basic Information")
         
-        # Title and Description (editable in Basic Information)
+        # Editable title and description with automatic saving
         current_title = selected_record.get('title', f"Snapshot {snapshot_id[:12]}...")
         current_description = selected_record.get('description', 'No description available')
         
-        # Editable title and description
-        with st.form(f"edit_metadata_{snapshot_id}"):
-            col_title, col_desc = st.columns([1, 2])
-            
-            with col_title:
-                new_title = st.text_input(
-                    "📌 Title",
-                    value=current_title,
-                    help="Give your snapshot a descriptive title",
-                    key=f"title_{snapshot_id}"
-                )
-            
-            with col_desc:
-                new_description = st.text_area(
-                    "📄 Description",
-                    value=current_description,
-                    height=80,
-                    help="Describe what this snapshot contains or its purpose",
-                    key=f"description_{snapshot_id}"
-                )
-            
-            # Save button
-            col_save1, col_save2 = st.columns([1, 3])
-            with col_save1:
-                save_metadata = st.form_submit_button("💾 Save", type="primary")
-            
-            # Handle saving metadata
-            if save_metadata:
-                if new_title != current_title or new_description != current_description:
-                    try:
-                        # Update the record
-                        selected_record['title'] = new_title
-                        selected_record['description'] = new_description
-                        selected_record['last_modified'] = datetime.now().isoformat()
-                        
-                        # Save back to file
-                        record_file = Path("data/snapshots") / f"{snapshot_id}.json"
-                        with open(record_file, 'w') as f:
-                            json.dump(selected_record, f, indent=2)
-                        
-                        st.success("✅ Metadata updated successfully!")
-                        st.rerun()
-                    except Exception as e:
-                        st.error(f"❌ Error saving metadata: {e}")
-                else:
-                    st.info("ℹ️ No changes to save")
+        col_title, col_desc = st.columns([1, 2])
+        
+        with col_title:
+            new_title = st.text_input(
+                "📌 Title",
+                value=current_title,
+                help="Give your snapshot a descriptive title",
+                key=f"title_{snapshot_id}"
+            )
+        
+        with col_desc:
+            new_description = st.text_area(
+                "📄 Description",
+                value=current_description,
+                height=80,
+                help="Describe what this snapshot contains or its purpose",
+                key=f"description_{snapshot_id}"
+            )
+        
+        # Auto-save when title or description changes
+        if new_title != current_title or new_description != current_description:
+            try:
+                # Update the record
+                selected_record['title'] = new_title
+                selected_record['description'] = new_description
+                selected_record['last_modified'] = datetime.now().isoformat()
+                
+                # Save back to file
+                record_file = Path("data/snapshots") / f"{snapshot_id}.json"
+                with open(record_file, 'w') as f:
+                    json.dump(selected_record, f, indent=2)
+                
+                st.success("✅ Metadata updated automatically!")
+                st.rerun()
+            except Exception as e:
+                st.error(f"❌ Error saving metadata: {e}")
         
         st.divider()
         
