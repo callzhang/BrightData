@@ -4,7 +4,7 @@ graph TB
     subgraph "User Interface Layer"
         UI["Streamlit UI<br/>snapshot_viewer.py"]
         CLI["CLI Manager<br/>snapshot_manager.py"]
-        JUPYTER["Jupyter Notebooks<br/>demo.ipynb, amazon_strategy.ipynb, embedding_demo.ipynb"]
+        JUPYTER["Jupyter Notebooks<br/>demo.ipynb"]
     end
 
     %% Core Application Layer
@@ -13,8 +13,6 @@ graph TB
         FC["Filter Criteria<br/>filter_criteria.py"]
         DR["Dataset Registry<br/>dataset_registry.py"]
         CM["Config Manager<br/>config.py"]
-        ES["Embedding Server<br/>embedding_server.py"]
-        PA["Product Analyzer<br/>product_analyzer.py"]
     end
 
     %% Data Storage Layer
@@ -23,8 +21,6 @@ graph TB
         DL["Downloads<br/>data/downloads/*.json"]
         SEC["Secrets<br/>secrets.yaml"]
         DS["Dataset Schemas<br/>datasets/*.md"]
-        EC["Embedding Cache<br/>embedding_cache/*.pkl"]
-        AR["Analysis Results<br/>analysis_results/*.json"]
     end
 
     %% External API Layer
@@ -82,9 +78,6 @@ graph TB
         VALID["Type-Aware Validation<br/>Runtime field validation"]
         MONITOR["Real-time Monitoring<br/>Status tracking"]
         DOWNLOAD_MGR["Download Management<br/>Cost-aware downloads"]
-        EMBED["Semantic Embeddings<br/>all-MiniLM-L6-v2 model"]
-        SIMILARITY["Product Similarity<br/>Cross-platform analysis"]
-        GAP_ANALYSIS["Category Gap Analysis<br/>Market opportunity identification"]
     end
 
     BDF --> DEDUP

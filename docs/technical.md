@@ -2,7 +2,7 @@
 
 ## System Overview
 
-The BrightData Database System is a comprehensive Python library for accessing and filtering data using the BrightData API across multiple datasets. The system provides type-safe database queries with built-in support for various e-commerce datasets, enhanced with semantic embedding analysis for competitive intelligence and market research.
+The BrightData Database System is a comprehensive Python library for accessing and filtering data using the BrightData API across multiple datasets. The system provides type-safe database queries with built-in support for various e-commerce datasets for competitive intelligence and market research.
 
 ## Core Components
 
@@ -82,48 +82,7 @@ The BrightData Database System is a comprehensive Python library for accessing a
 - Comprehensive validation and error reporting
 - Support for multiple configuration sources
 
-### 5. Embedding Server (`embedding_server.py`)
 
-**Purpose**: Semantic embedding generation and analysis for product comparison
-
-**Key Features**:
-- all-MiniLM-L6-v2 model for text embeddings
-- Product text processing and embedding generation
-- Cross-platform similarity analysis
-- Category gap identification
-- Competitive product matching
-
-**Technical Details**:
-- 384-dimensional embeddings using sentence-transformers
-- Batch processing for efficiency
-- Embedding caching for performance
-- Cosine similarity calculations
-- Memory-efficient design for MacBook Air M2 16GB RAM
-
-**Key Methods**:
-- `embed_product(product_data, platform)`: Generate embedding for single product
-- `embed_products_batch(products_data, platform)`: Batch embedding generation
-- `find_similar_products(query_product, candidates, top_k, min_similarity)`: Find similar products
-- `analyze_category_gaps(walmart_products, competitor_products)`: Category gap analysis
-- `find_competitive_products(walmart_products, competitor_products)`: Competitive analysis
-
-### 6. Product Analyzer (`product_analyzer.py`)
-
-**Purpose**: Comprehensive competitive intelligence and market analysis
-
-**Key Features**:
-- Integration with BrightData system
-- Cross-platform competitive analysis
-- Strategic recommendation generation
-- Market opportunity identification
-- Comprehensive reporting
-
-**Technical Details**:
-- Integrates with EmbeddingServer for semantic analysis
-- Uses BrightDataFilter for data access
-- Generates actionable business insights
-- Creates detailed market opportunity reports
-- Supports multiple e-commerce platforms
 
 **Key Methods**:
 - `fetch_platform_products(platform, category, limit, min_rating)`: Fetch products from platform
@@ -167,30 +126,6 @@ Snapshot Ready → Download Request → Content Retrieval → Local Storage → 
 4. **Local Storage**: Save to `data/downloads/` directory
 5. **UI Update**: Update interface with download status
 
-### 4. Embedding Analysis Flow
-
-```
-Product Data → Text Processing → Embedding Generation → Similarity Analysis → Strategic Insights
-```
-
-1. **Product Data**: Load product data from BrightData snapshots
-2. **Text Processing**: Combine title, description, brand, and category into comprehensive text
-3. **Embedding Generation**: Generate 384-dimensional embeddings using all-MiniLM-L6-v2
-4. **Similarity Analysis**: Calculate cosine similarity between products
-5. **Strategic Insights**: Generate competitive analysis and market opportunities
-
-### 5. Competitive Intelligence Flow
-
-```
-Multi-Platform Data → Embedding Generation → Gap Analysis → Strategic Recommendations → Reports
-```
-
-1. **Multi-Platform Data**: Collect product data from Walmart, Amazon, and other platforms
-2. **Embedding Generation**: Create semantic embeddings for all products
-3. **Gap Analysis**: Identify weak categories and market opportunities
-4. **Strategic Recommendations**: Generate actionable business insights
-5. **Reports**: Create comprehensive market opportunity reports
-
 ## File Structure
 
 ```
@@ -213,15 +148,6 @@ Multi-Platform Data → Embedding Generation → Gap Analysis → Strategic Reco
 │   └── *.json                   # Individual snapshot records
 ├── data/downloads/               # Downloaded snapshot data
 │   └── *.json                   # Downloaded snapshot files
-├── embedding_cache/              # Embedding cache storage
-│   └── *.pkl                    # Cached embeddings and models
-├── analysis_results/             # Analysis results storage
-│   └── *.json                   # Competitive analysis results
-├── embedding_server.py           # Embedding server for semantic analysis
-├── product_analyzer.py           # Competitive intelligence analyzer
-├── embedding_demo.ipynb          # Demo notebook for embedding features
-├── test_embedding_server.py      # Test script for embedding functionality
-├── requirements_embedding.txt    # Embedding-specific dependencies
 ├── snapshot_viewer.py            # Streamlit UI
 ├── snapshot_manager.py           # CLI management tool
 └── secrets.yaml                  # Configuration and secrets

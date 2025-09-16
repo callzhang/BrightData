@@ -527,26 +527,22 @@ def main():
         # Editable title and description with automatic saving
         current_title = selected_record.get('title', f"Snapshot {snapshot_id[:12]}...")
         current_description = selected_record.get('description', 'No description available')
+
         
-        col_title, col_desc = st.columns([1, 2])
-        
-        with col_title:
-            new_title = st.text_input(
-                "📌 Title",
-                value=current_title,
-                help="Give your snapshot a descriptive title",
-                key=f"title_{snapshot_id}"
-            )
-        
-        with col_desc:
-            new_description = st.text_area(
-                "📄 Description",
-                value=current_description,
-                height=80,
-                help="Describe what this snapshot contains or its purpose",
-                key=f"description_{snapshot_id}"
-            )
-        
+        new_title = st.text_input(
+            "📌 Title",
+            value=current_title,
+            help="Give your snapshot a descriptive title",
+            key=f"title_{snapshot_id}"
+        )
+    
+        new_description = st.text_area(
+            "📄 Description",
+            value=current_description,
+            help="Describe what this snapshot contains or its purpose",
+            key=f"description_{snapshot_id}"
+        )
+
         # Auto-save when title or description changes
         if new_title != current_title or new_description != current_description:
             try:
@@ -565,7 +561,6 @@ def main():
             except Exception as e:
                 st.error(f"❌ Error saving metadata: {e}")
         
-        st.divider()
         
         # Basic metadata
         info_data = {
