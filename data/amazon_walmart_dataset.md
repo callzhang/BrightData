@@ -6,7 +6,7 @@ This document describes the fields available in the Brightdata Amazon Walmart Da
 The Amazon Walmart Dataset provides comprehensive product comparison data between Amazon and Walmart, including product details, pricing, availability, and seller information from both platforms. This dataset enables competitive analysis, market research, and cross-platform product monitoring.
 
 **Key Features:**
-- **63 total fields** covering both Amazon and Walmart data
+- **100+ total fields** covering both Amazon and Walmart data
 - **Platform-specific fields** with `_amazon` and `_walmart` suffixes
 - **Cross-platform comparison** with `price_difference` field
 - **Recent sales data** with `bought_past_month_amazon` field
@@ -74,6 +74,15 @@ Based on the [Brightdata API documentation](https://docs.brightdata.com/api-refe
 - **`final_price_amazon`** (number): Amazon final price
 - **`reviews_count_amazon`** (number): Number of Amazon reviews
 - **`is_available_amazon`** (boolean): Amazon availability status
+- **`title_amazon`** (text): Product title on Amazon
+- **`brand_amazon`** (text): Product brand on Amazon
+- **`description_amazon`** (text): Brief description of the product
+- **`seller_name_amazon`** (text): Seller name on Amazon
+- **`asin_amazon`** (text): Unique identifier for each product
+- **`categories_amazon`** (array): Product categories
+- **`images_count_amazon`** (number): Number of images
+- **`video_count_amazon`** (number): Number of videos
+- **`amazon_choice_amazon`** (boolean): Specifies if the product is Amazon's Choice
 
 ### Walmart-Specific Fields (with `_walmart` suffix)
 - **`rating_walmart`** (number): Walmart product rating (1-5)
@@ -81,320 +90,178 @@ Based on the [Brightdata API documentation](https://docs.brightdata.com/api-refe
 - **`review_count_walmart`** (number): Number of Walmart reviews
 - **`available_for_delivery_walmart`** (boolean): Walmart delivery availability
 - **`available_for_pickup_walmart`** (boolean): Walmart pickup availability
+- **`product_name_walmart`** (text): The name of the product
+- **`brand_walmart`** (text): Product brand on Walmart
+- **`description_walmart`** (text): Product description on Walmart
+- **`product_id_walmart`** (text): The unique identifier of the product
+- **`sku_walmart`** (text): Stock Keeping Unit (SKU) for product identification
+- **`categories_walmart`** (array): Product categories on Walmart
 
-## Field Descriptions
+## Complete Field Descriptions
 
-### Platform Identification
-- **`platform`** (string): The e-commerce platform where the product is listed
-  - *Example*: "Amazon", "Walmart"
-  - *Filtering examples*:
-    ```json
-    {"name": "platform", "operator": "=", "value": "Amazon"}
-    {"name": "platform", "operator": "in", "value": ["Amazon", "Walmart"]}
-    ```
+### Amazon Fields (with `_amazon` suffix)
 
-### Core Product Information
-- **`title`** (string): The name of the product as listed on the platform
-  - *Example*: "Vital Farms, Large Grade A Eggs, 12 Count"
-  - *Filtering examples*:
-    ```json
-    {"name": "title", "operator": "includes", "value": "iPhone"}
-    {"name": "title", "operator": "=", "value": "Vital Farms, Large Grade A Eggs, 12 Count"}
-    ```
+#### Basic Product Information
+- **`title_amazon`** (text): Product title on Amazon
+- **`brand_amazon`** (text): Product brand on Amazon
+- **`description_amazon`** (text): Brief description of the product
+- **`asin_amazon`** (text): Unique identifier for each product (Amazon Standard Identification Number)
+- **`parent_asin_amazon`** (text): Parent ASIN of the product
+- **`input_asin_amazon`** (text): Input ASIN (currently inactive)
 
-- **`product_id`** (string): Platform-specific product identifier
-  - *Amazon*: ASIN (Amazon Standard Identification Number)
-  - *Walmart*: Product ID
-  - *Example*: "B0849MZ45Y", "12345678"
-  - *Filtering examples*:
-    ```json
-    {"name": "product_id", "operator": "=", "value": "B0849MZ45Y"}
-    {"name": "product_id", "operator": "in", "value": ["B0849MZ45Y", "12345678"]}
-    ```
+#### Pricing Information
+- **`initial_price_amazon`** (price): Initial price before discounts
+- **`final_price_amazon`** (price): Final price of the product
+- **`final_price_high_amazon`** (price): Highest value of the final price when it is a range
+- **`currency_amazon`** (text): Currency of the product
+- **`discount_amazon`** (text): Product discount information
 
-- **`brand`** (string): The brand associated with the product
-  - *Example*: "VITAL FARMS", "KCULE", "Stonyfield Organic"
-  - *Filtering examples*:
-    ```json
-    {"name": "brand", "operator": "=", "value": "VITAL FARMS"}
-    {"name": "brand", "operator": "in", "value": ["KCULE", "Stonyfield Organic"]}
-    ```
+#### Seller Information
+- **`seller_name_amazon`** (text): Seller name on Amazon
+- **`seller_id_amazon`** (text): Unique identifier for each seller
+- **`buybox_seller_amazon`** (text): Seller in the buy box
+- **`number_of_sellers_amazon`** (number): Number of sellers for the product
 
-- **`description`** (string): Detailed description of the product
-  - *Example*: "Vital Farms alfresco pasture raised large grade a eggs are produced by happy, healthy hens..."
-  - *Filtering examples*:
-    ```json
-    {"name": "description", "operator": "includes", "value": "organic"}
-    {"name": "description", "operator": "includes", "value": "stainless steel"}
-    ```
+#### Product Details
+- **`categories_amazon`** (array): Product categories
+- **`department_amazon`** (text): Department to which the product belongs
+- **`manufacturer_amazon`** (text): Manufacturer of the product
+- **`model_number_amazon`** (text): Model number of the product
+- **`upc_amazon`** (text): Universal Product Code
+- **`item_weight_amazon`** (text): Weight of the product
+- **`product_dimensions_amazon`** (text): Dimensions of the product
+- **`country_of_origin_amazon`** (text): Country of origin of the product
 
-- **`categories`** (array): The category or categories under which the product is listed (JSON array format)
-  - *Example*: ["Grocery & Gourmet Food", "Dairy, Eggs & Plant-Based Alternatives", "Eggs & Egg Substitutes", "Whole Eggs"]
-  - *Filtering examples*:
-    ```json
-    {"name": "categories", "operator": "array_includes", "value": "Electronics"}
-    {"name": "categories", "operator": "array_includes", "value": "Grocery & Gourmet Food"}
-    ```
+#### Reviews and Ratings
+- **`rating_amazon`** (number): Product rating
+- **`reviews_count_amazon`** (number): Number of reviews
+- **`answered_questions_amazon`** (number): Number of answered questions
+- **`top_review_amazon`** (text): Top review for the product
 
-### Pricing Information
-- **`initial_price`** (decimal): The original price of the product before any discounts
-  - *Example*: 8.49, 9.98, 7.99
-  - *Filtering examples*:
-    ```json
-    {"name": "initial_price", "operator": ">", "value": "100"}
-    {"name": "initial_price", "operator": ">=", "value": "50"}
-    ```
+#### Availability and Sales
+- **`availability_amazon`** (text): Product availability
+- **`is_available_amazon`** (boolean): Indication if the product is still available
+- **`bought_past_month_amazon`** (number): Number of units bought in the past month
 
-- **`final_price`** (decimal): The current/final price of the product
-  - *Example*: 8.49, 9.98, 7.99
-  - *Filtering examples*:
-    ```json
-    {"name": "final_price", "operator": "<=", "value": "200"}
-    {"name": "final_price", "operator": "=", "value": "8.49"}
-    ```
+#### Rankings and Categories
+- **`root_bs_rank_amazon`** (number): Best sellers rank in the general category
+- **`bs_rank_amazon`** (number): Best seller rank in the specific category
+- **`root_bs_category_amazon`** (text): Best seller root category
+- **`bs_category_amazon`** (text): Best seller category
+- **`subcategory_rank_amazon`** (array): Subcategory ranking information
 
-- **`currency`** (string): The currency in which the product is priced
-  - *Example*: "USD"
-  - *Filtering examples*:
-    ```json
-    {"name": "currency", "operator": "=", "value": "USD"}
-    {"name": "currency", "operator": "in", "value": ["USD", "EUR", "GBP"]}
-    ```
+#### Media and Content
+- **`images_count_amazon`** (number): Number of images
+- **`images_amazon`** (array): URLs of the product images
+- **`image_url_amazon`** (url): URL that links directly to the product image
+- **`video_count_amazon`** (number): Number of videos
+- **`video_amazon`** (boolean): Boolean indicating the presence of videos
+- **`videos_amazon`** (array): URLs of the product's videos
+- **`downloadable_videos_amazon`** (array): Downloadable video information
 
-- **`discount`** (decimal): Any discount applied to the product's initial price
-  - *Example*: null (no discount), 5.00 (discount amount)
-  - *Filtering examples*:
-    ```json
-    {"name": "discount", "operator": ">", "value": "0"}
-    {"name": "discount", "operator": "is_not_null", "value": null}
-    ```
+#### Product Features and Details
+- **`features_amazon`** (array): Product features
+- **`product_details_amazon`** (array): Full product details
+- **`product_description_amazon`** (array): Detailed product description
+- **`variations_amazon`** (array): Details about the same product in different variations
+- **`delivery_amazon`** (array): Delivery-related information
+- **`format_amazon`** (array): Format-related information
 
-### Availability & Stock
-- **`availability`** (string): The stock status of the product
-  - *Example*: "In Stock", "Out of Stock", "Limited Stock"
-  - *Filtering examples*:
-    ```json
-    {"name": "availability", "operator": "=", "value": "In Stock"}
-    {"name": "availability", "operator": "!=", "value": "Out of Stock"}
-    ```
+#### Pricing and Buy Box
+- **`buybox_prices_amazon`** (object): Product price details
+- **`prices_breakdown_amazon`** (object): Detailed price breakdown
+- **`other_sellers_prices_amazon`** (array): Other sellers details who sell the product
 
-- **`is_available`** (boolean): Boolean flag indicating if the product is available
-  - *Example*: true, false
-  - *Filtering examples*:
-    ```json
-    {"name": "is_available", "operator": "=", "value": "true"}
-    ```
+#### Additional Information
+- **`date_first_available_amazon`** (text): Date when the product first became available
+- **`domain_amazon`** (url): URL of the product domain
+- **`url_amazon`** (url): URL that links directly to the product
+- **`origin_url_amazon`** (url): Original URL
+- **`seller_url_amazon`** (url): Seller URL
+- **`ingredients_amazon`** (text): Ingredients of the product, relevant mostly for food products
+- **`plus_content_amazon`** (boolean): Boolean indicating the presence of additional content
+- **`amazon_choice_amazon`** (boolean): Specifies if the product is Amazon's Choice
+- **`badge_amazon`** (text): Product badge (e.g., #1 Best Seller or Amazon's Choice)
+- **`climate_pledge_friendly_amazon`** (boolean): Climate pledge friendly status
+- **`sustainability_features_amazon`** (array): Sustainability features
+- **`from_the_brand_amazon`** (array): Brand-specific information
+- **`customer_says_amazon`** (text): Customer feedback summary
 
-### Seller Information
-- **`seller_name`** (string): The name of the seller offering the product
-  - *Amazon*: "Amazon.com", "Kcule®", "Ama***.co***"
-  - *Walmart*: "Walmart", "Third Party Seller"
-  - *Filtering examples*:
-    ```json
-    {"name": "seller_name", "operator": "=", "value": "Amazon.com"}
-    {"name": "seller_name", "operator": "includes", "value": "Amazon"}
-    ```
+### Walmart Fields (with `_walmart` suffix)
 
-- **`seller_id`** (string): A unique identifier for the seller
-  - *Example*: "ATVPDKIKX0DER", "A2VDSVO2R3Q720"
-  - *Filtering examples*:
-    ```json
-    {"name": "seller_id", "operator": "=", "value": "ATVPDKIKX0DER"}
-    ```
+#### Basic Product Information
+- **`product_name_walmart`** (text): The name of the product
+- **`brand_walmart`** (text): Product brand on Walmart
+- **`description_walmart`** (text): Product description on Walmart
+- **`product_id_walmart`** (text): The unique identifier of the product
+- **`sku_walmart`** (text): Stock Keeping Unit (SKU) for product identification
+- **`gtin_walmart`** (text): Global Trade Item Number (GTIN) for product identification
+- **`upc_walmart`** (text): Universal Product Code (UPC) of the product
 
-- **`is_fulfilled_by_platform`** (boolean): Whether the product is fulfilled by the platform (Amazon/Walmart)
-  - *Example*: true, false
-  - *Filtering examples*:
-    ```json
-    {"name": "is_fulfilled_by_platform", "operator": "=", "value": "true"}
-    ```
+#### Pricing Information
+- **`final_price_walmart`** (price): Price of the product
+- **`initial_price_walmart`** (number): The price before the discount if exists
+- **`currency_walmart`** (text): Currency used for the product price
+- **`discount_walmart`** (text): The discount in value or percentage
+- **`unit_price_walmart`** (number): The unit price of the product
+- **`unit_walmart`** (text): The unit of measurement for the product
 
-### Customer Reviews & Ratings
-- **`reviews_count`** (integer): The total number of reviews the product has received
-  - *Example*: 9024, 1039, 1214
-  - *Filtering examples*:
-    ```json
-    {"name": "reviews_count", "operator": ">", "value": "100"}
-    {"name": "reviews_count", "operator": ">=", "value": "1000"}
-    ```
+#### Product Details
+- **`categories_walmart`** (array): Product categories on Walmart
+- **`category_name_walmart`** (text): The name of the category associated with the product
+- **`category_path_walmart`** (text): The path of the category associated with the product
+- **`category_ids_walmart`** (text): The category IDs associated with the product
+- **`category_url_walmart`** (url): URL representing the category link associated with the product
+- **`root_category_name_walmart`** (text): The name of the root category associated with the product
+- **`root_category_url_walmart`** (url): URL link associated with the product
 
-- **`rating`** (decimal): The average rating given to the product by customers (typically 1-5 scale)
-  - *Example*: 4.9, 4.8, 4.5
-  - *Filtering examples*:
-    ```json
-    {"name": "rating", "operator": ">=", "value": "4.0"}
-    {"name": "rating", "operator": ">", "value": "4.5"}
-    ```
+#### Reviews and Ratings
+- **`rating_walmart`** (number): The overall rating of the product
+- **`review_count_walmart`** (number): Number indicating the count of reviews for the product
+- **`rating_stars_walmart`** (object): Object representing the distribution of ratings in stars, from one star to five stars
+- **`top_reviews_walmart`** (object): Object representing top reviews, including negative and positive reviews
+- **`customer_reviews_walmart`** (array): Array of objects representing customer reviews
+- **`review_tags_walmart`** (array): Tags associated with product reviews
 
-### Product Details & Specifications
-- **`item_weight`** (string): Weight of the product
-  - *Example*: "1.77 Pounds", "1.2 ounces", "37.2 Ounces"
-  - *Filtering examples*:
-    ```json
-    {"name": "item_weight", "operator": "is_not_null", "value": null}
-    ```
+#### Availability and Delivery
+- **`available_for_delivery_walmart`** (boolean): Boolean indicating product availability for delivery
+- **`available_for_pickup_walmart`** (boolean): Boolean indicating product availability for pickup
+- **`free_returns_walmart`** (text): Information about free returns for the product
 
-- **`product_dimensions`** (string): Physical dimensions of the product
-  - *Example*: "0.39 x 0.39 x 0.5 inches; 1.77 Pounds"
-  - *Filtering examples*:
-    ```json
-    {"name": "product_dimensions", "operator": "is_not_null", "value": null}
-    ```
+#### Seller Information
+- **`seller_walmart`** (text): Seller of the product
 
-- **`model_number`** (string): Model number of the product
-  - *Example*: "u-4c-7501", "STEELTAG-SILVER-A"
-  - *Filtering examples*:
-    ```json
-    {"name": "model_number", "operator": "is_not_null", "value": null}
-    ```
+#### Product Variations
+- **`sizes_walmart`** (array): The sizes available for the product
+- **`colors_walmart`** (array): The colors available for the product
 
-- **`manufacturer`** (string): Manufacturer of the product
-  - *Example*: "VITAL FARMS", "KCULE", "Stonyfield Organic"
-  - *Filtering examples*:
-    ```json
-    {"name": "manufacturer", "operator": "=", "value": "VITAL FARMS"}
-    ```
+#### Media and Images
+- **`image_urls_walmart`** (array): Array of URLs representing product images
+- **`main_image_walmart`** (image): The main product image
 
-- **`department`** (string): Department/category of the product
-  - *Example*: "Grocery & Gourmet Food", "Clothing, Shoes & Jewelry", "Baby Products"
-  - *Filtering examples*:
-    ```json
-    {"name": "department", "operator": "=", "value": "Electronics"}
-    ```
+#### Product Specifications
+- **`specifications_walmart`** (array): Array of objects representing product specifications
+- **`other_attributes_walmart`** (array): Array of objects representing other attributes
+- **`nutrition_information_walmart`** (array): Nutrition information
+- **`ingredients_walmart`** (text): Ingredients of the product, relevant for food products mostly
+- **`ingredients_full_walmart`** (array): Full ingredients information
 
-### Media & Images
-- **`images`** (array): URLs or links to images of the product (JSON array)
-  - *Example*: ["https://m.media-amazon.com/images/I/71zyUBNd3GL._SL1500_.jpg", ...]
-  - *Filtering examples*:
-    ```json
-    {"name": "images", "operator": "is_not_null", "value": null}
-    {"name": "images", "operator": "array_includes", "value": "https://"}
-    ```
+#### Navigation and Links
+- **`url_walmart`** (url): URL representing the product link
+- **`breadcrumbs_walmart`** (array): Array of objects representing breadcrumb links
+- **`related_pages_walmart`** (array): Array of related pages associated with the product
 
-- **`images_count`** (integer): Number of product images available
-  - *Example*: 11, 7, 10
-  - *Filtering examples*:
-    ```json
-    {"name": "images_count", "operator": ">", "value": "5"}
-    ```
-
-- **`image_url`** (string): Primary image URL for the product
-  - *Example*: "https://m.media-amazon.com/images/I/71zyUBNd3GL._SL1500_.jpg"
-  - *Filtering examples*:
-    ```json
-    {"name": "image_url", "operator": "is_not_null", "value": null}
-    ```
-
-### Best Sellers & Rankings
-- **`best_seller_rank`** (integer): Best seller rank in the category
-  - *Example*: null, 18745, 5557
-  - *Filtering examples*:
-    ```json
-    {"name": "best_seller_rank", "operator": "is_not_null", "value": null}
-    {"name": "best_seller_rank", "operator": "<=", "value": "10000"}
-    ```
-
-- **`category_rank`** (integer): Rank within the specific category
-  - *Example*: 40, 6
-  - *Filtering examples*:
-    ```json
-    {"name": "category_rank", "operator": "<=", "value": "100"}
-    ```
-
-- **`best_seller_category`** (string): Best seller category
-  - *Example*: "Clothing, Shoes & Jewelry", "Baby"
-  - *Filtering examples*:
-    ```json
-    {"name": "best_seller_category", "operator": "=", "value": "Electronics"}
-    ```
-
-### Additional Product Information
-- **`date_first_available`** (string): Date when the product was first available on the platform
-  - *Example*: "December 12, 2023"
-  - *Filtering examples*:
-    ```json
-    {"name": "date_first_available", "operator": "is_not_null", "value": null}
-    ```
-
-- **`url`** (string): Product URL on the platform
-  - *Example*: "https://www.amazon.com/VITAL-FARMS-Large-Grade-Eggs/dp/B0849MZ45Y"
-  - *Filtering examples*:
-    ```json
-    {"name": "url", "operator": "is_not_null", "value": null}
-    ```
-
-- **`domain`** (string): Platform domain
-  - *Example*: "https://www.amazon.com/", "https://www.walmart.com/"
-  - *Filtering examples*:
-    ```json
-    {"name": "domain", "operator": "=", "value": "https://www.amazon.com/"}
-    {"name": "domain", "operator": "in", "value": ["https://www.amazon.com/", "https://www.walmart.com/"]}
-    ```
-
-- **`upc`** (string): Universal Product Code
-  - *Example*: "861745000010", "052159703288"
-  - *Filtering examples*:
-    ```json
-    {"name": "upc", "operator": "is_not_null", "value": null}
-    ```
+#### Additional Information
+- **`aisle_walmart`** (text): The aisle where the product is located
+- **`tags_walmart`** (array): Tags associated with the product
 
 ### Cross-Platform Comparison Fields
-- **`price_difference`** (decimal): Price difference between Amazon and Walmart for the same product
+- **`price_difference`** (number): Amazon final price - Walmart final price
   - *Example*: 2.50, -1.25, 0.00
   - *Filtering examples*:
     ```json
     {"name": "price_difference", "operator": ">", "value": "0"}
     {"name": "price_difference", "operator": "<", "value": "0"}
-    ```
-
-- **`price_difference_percentage`** (decimal): Percentage difference in price between platforms
-  - *Example*: 15.5, -8.2, 0.0
-  - *Filtering examples*:
-    ```json
-    {"name": "price_difference_percentage", "operator": ">", "value": "10"}
-    ```
-
-- **`availability_match`** (boolean): Whether the product is available on both platforms
-  - *Example*: true, false
-  - *Filtering examples*:
-    ```json
-    {"name": "availability_match", "operator": "=", "value": "true"}
-    ```
-
-- **`brand_match`** (boolean): Whether the same brand is available on both platforms
-  - *Example*: true, false
-  - *Filtering examples*:
-    ```json
-    {"name": "brand_match", "operator": "=", "value": "true"}
-    ```
-
-### Complex Data Fields
-- **`product_details`** (array): Structured product details (JSON array of objects)
-  - *Example*: [{"type": "Product Dimensions", "value": "0.39 x 0.39 x 0.5 inches; 1.77 Pounds"}, ...]
-  - *Filtering examples*:
-    ```json
-    {"name": "product_details", "operator": "is_not_null", "value": null}
-    ```
-
-- **`variations`** (array): Product variations (colors, sizes, etc.) (JSON array of objects)
-  - *Example*: [{"product_id": "B0CP65BYKJ", "color": "Classic Square-black", ...}, ...]
-  - *Filtering examples*:
-    ```json
-    {"name": "variations", "operator": "is_not_null", "value": null}
-    ```
-
-- **`features`** (array): Product features (JSON array)
-  - *Example*: ["MADE WITH FRESH AIR AND SUNSHINE Our hens are tended by hand on small family farms in the USA.", ...]
-  - *Filtering examples*:
-    ```json
-    {"name": "features", "operator": "array_includes", "value": "organic"}
-    ```
-
-- **`delivery`** (array): Delivery options (JSON array)
-  - *Example*: ["$9.95 for 2-hour delivery with Prime", "$4.99 delivery August 22 - 27."]
-  - *Filtering examples*:
-    ```json
-    {"name": "delivery", "operator": "array_includes", "value": "Prime"}
     ```
 
 ## Complex Filtering Examples
@@ -408,8 +275,9 @@ Based on the [Brightdata API documentation](https://docs.brightdata.com/api-refe
     "operator": "and",
     "filters": [
       {"name": "price_difference", "operator": ">", "value": "0"},
-      {"name": "availability_match", "operator": "=", "value": "true"},
-      {"name": "currency", "operator": "=", "value": "USD"}
+      {"name": "is_available_amazon", "operator": "=", "value": "true"},
+      {"name": "available_for_delivery_walmart", "operator": "=", "value": "true"},
+      {"name": "currency_amazon", "operator": "=", "value": "USD"}
     ]
   }
 }
@@ -423,15 +291,17 @@ Based on the [Brightdata API documentation](https://docs.brightdata.com/api-refe
   "filter": {
     "operator": "and",
     "filters": [
-      {"name": "rating", "operator": ">=", "value": "4.5"},
-      {"name": "availability_match", "operator": "=", "value": "true"},
-      {"name": "categories", "operator": "array_includes", "value": "Electronics"}
+      {"name": "rating_amazon", "operator": ">=", "value": "4.5"},
+      {"name": "rating_walmart", "operator": ">=", "value": "4.5"},
+      {"name": "is_available_amazon", "operator": "=", "value": "true"},
+      {"name": "available_for_delivery_walmart", "operator": "=", "value": "true"},
+      {"name": "categories_amazon", "operator": "array_includes", "value": "Electronics"}
     ]
   }
 }
 ```
 
-### Platform-Specific Analysis
+### Amazon-Specific Analysis
 ```json
 {
   "dataset_id": "gd_m4l6s4mn2g2rkx9lia",
@@ -439,9 +309,9 @@ Based on the [Brightdata API documentation](https://docs.brightdata.com/api-refe
   "filter": {
     "operator": "and",
     "filters": [
-      {"name": "platform", "operator": "=", "value": "Amazon"},
-      {"name": "department", "operator": "=", "value": "Electronics"},
-      {"name": "is_available", "operator": "=", "value": "true"}
+      {"name": "department_amazon", "operator": "=", "value": "Electronics"},
+      {"name": "is_available_amazon", "operator": "=", "value": "true"},
+      {"name": "bought_past_month_amazon", "operator": ">", "value": "100"}
     ]
   }
 }
@@ -455,9 +325,10 @@ Based on the [Brightdata API documentation](https://docs.brightdata.com/api-refe
   "filter": {
     "operator": "and",
     "filters": [
-      {"name": "price_difference_percentage", "operator": ">", "value": "20"},
-      {"name": "availability_match", "operator": "=", "value": "true"},
-      {"name": "brand_match", "operator": "=", "value": "true"}
+      {"name": "price_difference", "operator": ">", "value": "10"},
+      {"name": "is_available_amazon", "operator": "=", "value": "true"},
+      {"name": "available_for_delivery_walmart", "operator": "=", "value": "true"},
+      {"name": "brand_amazon", "operator": "=", "value": "brand_walmart"}
     ]
   }
 }
@@ -471,20 +342,38 @@ Based on the [Brightdata API documentation](https://docs.brightdata.com/api-refe
   "filter": {
     "operator": "and",
     "filters": [
-      {"name": "brand", "operator": "in", "value": ["Apple", "Samsung", "Sony"]},
-      {"name": "department", "operator": "=", "value": "Electronics"},
-      {"name": "is_available", "operator": "=", "value": "true"}
+      {"name": "brand_amazon", "operator": "in", "value": ["Apple", "Samsung", "Sony"]},
+      {"name": "department_amazon", "operator": "=", "value": "Electronics"},
+      {"name": "is_available_amazon", "operator": "=", "value": "true"},
+      {"name": "available_for_delivery_walmart", "operator": "=", "value": "true"}
     ]
   }
 }
 ```
 
 ## Data Types Summary
-- **String fields**: platform, title, product_id, brand, description, currency, availability, seller_name, seller_id, item_weight, product_dimensions, model_number, manufacturer, department, best_seller_category, date_first_available, url, domain, upc
-- **Numeric fields**: initial_price, final_price, discount, reviews_count, rating, images_count, best_seller_rank, category_rank, price_difference, price_difference_percentage
-- **Boolean fields**: is_available, is_fulfilled_by_platform, availability_match, brand_match
-- **Array fields**: categories, images, product_details, variations, features, delivery
-- **Object fields**: Complex nested structures for detailed product information
+
+### Amazon Fields Data Types
+- **Text fields**: title_amazon, brand_amazon, description_amazon, asin_amazon, parent_asin_amazon, input_asin_amazon, seller_name_amazon, seller_id_amazon, buybox_seller_amazon, department_amazon, manufacturer_amazon, model_number_amazon, upc_amazon, item_weight_amazon, product_dimensions_amazon, country_of_origin_amazon, top_review_amazon, date_first_available_amazon, domain_amazon, origin_url_amazon, ingredients_amazon, badge_amazon, root_bs_category_amazon, bs_category_amazon, customer_says_amazon, seller_url_amazon
+- **Price fields**: initial_price_amazon, final_price_amazon, final_price_high_amazon
+- **Number fields**: reviews_count_amazon, answered_questions_amazon, images_count_amazon, video_count_amazon, rating_amazon, root_bs_rank_amazon, bs_rank_amazon, number_of_sellers_amazon, bought_past_month_amazon
+- **Boolean fields**: is_available_amazon, plus_content_amazon, video_amazon, amazon_choice_amazon, climate_pledge_friendly_amazon
+- **Array fields**: categories_amazon, images_amazon, videos_amazon, downloadable_videos_amazon, features_amazon, product_details_amazon, product_description_amazon, variations_amazon, delivery_amazon, format_amazon, other_sellers_prices_amazon, subcategory_rank_amazon, sustainability_features_amazon, from_the_brand_amazon
+- **Object fields**: buybox_prices_amazon, prices_breakdown_amazon
+- **URL fields**: image_url_amazon, url_amazon
+
+### Walmart Fields Data Types
+- **Text fields**: product_name_walmart, brand_walmart, description_walmart, product_id_walmart, sku_walmart, gtin_walmart, upc_walmart, currency_walmart, discount_walmart, unit_walmart, category_name_walmart, category_path_walmart, category_ids_walmart, root_category_name_walmart, seller_walmart, aisle_walmart, ingredients_walmart, free_returns_walmart
+- **Price fields**: final_price_walmart, initial_price_walmart, unit_price_walmart
+- **Number fields**: review_count_walmart, rating_walmart
+- **Boolean fields**: available_for_delivery_walmart, available_for_pickup_walmart
+- **Array fields**: categories_walmart, image_urls_walmart, customer_reviews_walmart, review_tags_walmart, sizes_walmart, colors_walmart, specifications_walmart, other_attributes_walmart, nutrition_information_walmart, ingredients_full_walmart, breadcrumbs_walmart, related_pages_walmart, tags_walmart
+- **Object fields**: rating_stars_walmart, top_reviews_walmart
+- **URL fields**: category_url_walmart, root_category_url_walmart, url_walmart
+- **Image fields**: main_image_walmart
+
+### Cross-Platform Fields Data Types
+- **Number fields**: price_difference
 
 ## API Response Format
 The API returns a snapshot ID that you can use to download the filtered data:
