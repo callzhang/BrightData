@@ -771,64 +771,81 @@ def main():
                     
                     # Show download progress
                     with st.spinner(f"Downloading {download_snapshot_id} in {download_format.upper()} format..."):
-                        # Download the snapshot content
-                        response = brightdata.download_snapshot_content(
-                            download_snapshot_id,
-                            format=download_format,
-                            compress=compress_data
-                        )
+                        # Download the snapshot content with retry logic for 202 responses
+                        max_retries = 2
+                        retry_delay = 5  # seconds
                         
-                        if response.status_code == 200:
-                            # Check if the response contains actual data or a status message
-                            content = response.text.strip()
+                        for attempt in range(max_retries + 1):
+                            response = brightdata.download_snapshot_content(
+                                download_snapshot_id,
+                                format=download_format,
+                                compress=compress_data
+                            )
                             
-                            # Check for status messages
-                            if content in ["Snapshot is building. Try again in a few minutes", 
-                                          "Snapshot not ready", 
-                                          "Snapshot is processing",
-                                          "No data available"]:
-                                st.warning(f"⚠️ {content}")
-                                st.info("💡 The snapshot is still being processed. Please wait and try again later.")
-                                return
-                            
-                            # Save the downloaded data
-                            downloads_dir = Path("data/downloads")
-                            downloads_dir.mkdir(exist_ok=True)
-                            
-                            file_extension = f".{download_format}"
-                            if compress_data:
-                                file_extension += ".gz"
-                            
-                            file_path = downloads_dir / f"{download_snapshot_id}{file_extension}"
-                            
-                            with open(file_path, 'wb') as f:
-                                f.write(response.content)
-                            
-                            # Update the record to mark as downloaded
-                            record_file = Path("snapshot_records") / f"{download_snapshot_id}.json"
-                            if record_file.exists():
-                                with open(record_file, 'r') as f:
-                                    record = json.load(f)
+                            if response.status_code == 200:
+                                # Check if the response contains actual data or a status message
+                                content = response.text.strip()
                                 
-                                record['downloaded'] = True
-                                record['download_time'] = datetime.now().isoformat()
-                                record['download_format'] = download_format
-                                record['download_file'] = str(file_path)
+                                # Check for status messages
+                                if content in ["Snapshot is building. Try again in a few minutes", 
+                                              "Snapshot not ready", 
+                                              "Snapshot is processing",
+                                              "No data available"]:
+                                    st.warning(f"⚠️ {content}")
+                                    st.info("💡 The snapshot is still being processed. Please wait and try again later.")
+                                    return
                                 
-                                with open(record_file, 'w') as f:
-                                    json.dump(record, f, indent=2)
-                            
-                            st.success(f"✅ Successfully downloaded {download_snapshot_id}!")
-                            st.info(f"📁 File saved to: `{file_path}`")
-                            st.info(f"📊 Size: {len(response.content) / 1024 / 1024:.2f} MB")
-                            
-                            # Refresh the page to show updated status
-                            st.rerun()
-                            
-                        else:
-                            st.error(f"❌ Download failed: HTTP {response.status_code}")
-                            if response.text:
-                                st.error(f"Error details: {response.text}")
+                                # Save the downloaded data
+                                downloads_dir = Path("data/downloads")
+                                downloads_dir.mkdir(exist_ok=True)
+                                
+                                file_extension = f".{download_format}"
+                                if compress_data:
+                                    file_extension += ".gz"
+                                
+                                file_path = downloads_dir / f"{download_snapshot_id}{file_extension}"
+                                
+                                with open(file_path, 'wb') as f:
+                                    f.write(response.content)
+                                
+                                # Update the record to mark as downloaded
+                                record_file = Path("snapshot_records") / f"{download_snapshot_id}.json"
+                                if record_file.exists():
+                                    with open(record_file, 'r') as f:
+                                        record = json.load(f)
+                                    
+                                    record['downloaded'] = True
+                                    record['download_time'] = datetime.now().isoformat()
+                                    record['download_format'] = download_format
+                                    record['download_file'] = str(file_path)
+                                    
+                                    with open(record_file, 'w') as f:
+                                        json.dump(record, f, indent=2)
+                                
+                                st.success(f"✅ Successfully downloaded {download_snapshot_id}!")
+                                st.info(f"📁 File saved to: `{file_path}`")
+                                st.info(f"📊 Size: {len(response.content) / 1024 / 1024:.2f} MB")
+                                
+                                # Refresh the page to show updated status
+                                st.rerun()
+                                break  # Success, exit retry loop
+                                
+                            elif response.status_code == 202:
+                                # Snapshot is still building, retry after delay
+                                if attempt < max_retries:
+                                    st.info(f"⏳ Snapshot still building, retrying in {retry_delay} seconds... (attempt {attempt + 1}/{max_retries + 1})")
+                                    import time
+                                    time.sleep(retry_delay)
+                                    continue
+                                else:
+                                    st.warning("⚠️ Snapshot is still building after multiple attempts")
+                                    st.info("💡 The snapshot is still being processed. Please wait and try again later.")
+                                    break
+                            else:
+                                st.error(f"❌ Download failed: HTTP {response.status_code}")
+                                if response.text:
+                                    st.error(f"Error details: {response.text}")
+                                break  # Exit retry loop on other errors
     
     with col2:
         # Filter Criteria
