@@ -66,8 +66,8 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 def load_snapshot_records():
-    """Load all snapshot records from the data/snapshots directory."""
-    records_dir = Path("data/snapshots")
+    """Load all snapshot records from the snapshot_records directory."""
+    records_dir = Path("snapshot_records")
     if not records_dir.exists():
         return []
     
@@ -222,7 +222,7 @@ def delete_snapshot_record(snapshot_id):
     """Delete a snapshot record and its associated files."""
     try:
         # Delete the JSON record file
-        record_file = Path("data/snapshots") / f"{snapshot_id}.json"
+        record_file = Path("snapshot_records") / f"{snapshot_id}.json"
         if record_file.exists():
             record_file.unlink()
         
@@ -246,7 +246,7 @@ def update_manual_snapshot_status(snapshot_id):
         
         if metadata:
             # Update the record with new status and metadata
-            record_file = Path("data/snapshots") / f"{snapshot_id}.json"
+            record_file = Path("snapshot_records") / f"{snapshot_id}.json"
             if record_file.exists():
                 with open(record_file, 'r') as f:
                     record = json.load(f)
@@ -552,7 +552,7 @@ def main():
                 selected_record['last_modified'] = datetime.now().isoformat()
                 
                 # Save back to file
-                record_file = Path("data/snapshots") / f"{snapshot_id}.json"
+                record_file = Path("snapshot_records") / f"{snapshot_id}.json"
                 with open(record_file, 'w') as f:
                     json.dump(selected_record, f, indent=2)
                 
@@ -709,7 +709,7 @@ def main():
                                     f.write(response.content)
                                 
                                 # Update the record to mark as downloaded
-                                record_file = Path("data/snapshots") / f"{download_snapshot_id}.json"
+                                record_file = Path("snapshot_records") / f"{download_snapshot_id}.json"
                                 if record_file.exists():
                                     with open(record_file, 'r') as f:
                                         record = json.load(f)
