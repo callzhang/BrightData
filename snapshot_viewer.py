@@ -455,7 +455,7 @@ def main():
             display_icon = status_icons.get(display_status, '📋')
             
             # Create clickable area with title
-            button_text = f"{display_icon} {display_status.upper()}\n{title}\n[{records_limit} Records] {filter_count} filters\n{date_str}"
+            button_text = f"{display_icon} {display_status.upper()}\n{title}\n[{records_limit} Records] {filter_count} filters\n{date_str}\nID: {record['snapshot_id']}"
             
             # Add highlighting for selected snapshot
             if is_selected:
