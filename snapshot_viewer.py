@@ -208,7 +208,7 @@ def load_snapshot_data(snapshot_id):
             except pd.errors.EmptyDataError:
                 st.warning("⚠️ Downloaded file contains no data")
                 return None
-            except pd.errors.JSONDecodeError as e:
+            except json.JSONDecodeError as e:
                 st.error(f"❌ Invalid JSON format in {data_file}: {e}")
                 st.info("💡 The snapshot might still be building. Try downloading again later.")
                 return None
