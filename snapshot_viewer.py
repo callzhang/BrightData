@@ -450,13 +450,47 @@ def main():
             display_icon = status_icons.get(display_status, '📋')
             
             # Create clickable area with title
+            button_text = f"{display_icon} {display_status.upper()}\n{title}\n[{records_limit} Records] {filter_count} filters\n{date_str}"
+            
+            # Add highlighting for selected snapshot
+            if is_selected:
+                button_text = f"🎯 {button_text}"  # Add target icon for selected
+                help_text = "Currently selected snapshot"
+            else:
+                help_text = "Click to select this snapshot"
+            
             if st.sidebar.button(
-                f"{display_icon} {display_status.upper()}\n{title}\n[{records_limit} Records] {filter_count} filters\n{date_str}",
+                button_text,
                 key=f"select_{i}",
-                help="Click to select this snapshot",
+                help=help_text,
                 use_container_width=True
             ):
                 st.session_state['selected_snapshot'] = record
+                # Check status when selecting a snapshot
+                try:
+                    from util.brightdata import BrightDataFilter
+                    brightdata = BrightDataFilter('amazon_walmart')
+                    metadata = brightdata.get_snapshot_metadata(record['snapshot_id'])
+                    
+                    # Update the record with latest status
+                    if metadata:
+                        record['status'] = metadata.get('status', record.get('status', 'submitted'))
+                        record['dataset_size'] = metadata.get('dataset_size')
+                        record['file_size'] = metadata.get('file_size')
+                        record['cost'] = metadata.get('cost')
+                        
+                        # Save updated record
+                        import json
+                        from pathlib import Path
+                        record_file = Path("snapshot_records") / f"{record['snapshot_id']}.json"
+                        if record_file.exists():
+                            with open(record_file, 'w') as f:
+                                json.dump(record, f, indent=2)
+                        
+                        st.session_state['selected_snapshot'] = record
+                except Exception as e:
+                    st.sidebar.error(f"⚠️ Could not check status: {e}")
+                
                 st.rerun()
     
     # Main content area controls
@@ -464,6 +498,22 @@ def main():
     
     with col1:
         st.subheader("📋 Snapshot Details")
+        
+        # Show status check indicator
+        if 'selected_snapshot' in st.session_state:
+            selected_snapshot = st.session_state['selected_snapshot']
+            if selected_snapshot:
+                status = selected_snapshot.get('status', 'submitted')
+                if status == 'ready':
+                    st.success(f"✅ Status: {status.upper()} - Ready for download")
+                elif status == 'downloaded':
+                    st.info(f"💾 Status: {status.upper()} - Data available")
+                elif status == 'submitted':
+                    st.warning(f"📤 Status: {status.upper()} - Processing...")
+                elif status == 'failed':
+                    st.error(f"❌ Status: {status.upper()} - Failed")
+                else:
+                    st.info(f"📊 Status: {status.upper()}")
     
     with col2:
         col2_1, col2_2 = st.columns(2)
