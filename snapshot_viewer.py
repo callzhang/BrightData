@@ -506,6 +506,7 @@ def main():
     # Final safety check for selected_record
     if not selected_record or not isinstance(selected_record, dict):
         st.error("❌ Invalid snapshot record selected.")
+        st.write(f"Debug: selected_record = {selected_record}")
         return
     
     snapshot_id = selected_record['snapshot_id']
@@ -580,17 +581,28 @@ def main():
         # Basic metadata
         if not selected_record:
             st.error("❌ No snapshot record selected.")
+            st.write(f"Debug: selected_record is None at metadata section")
+            return
+        
+        # Final defensive check before accessing properties
+        if not isinstance(selected_record, dict) or 'snapshot_id' not in selected_record:
+            st.error("❌ Invalid snapshot record format.")
             return
             
-        info_data = {
-            "Snapshot ID": selected_record['snapshot_id'],
-            "Dataset ID": selected_record.get('dataset_id', 'N/A'),
-            "Records Limit": selected_record.get('records_limit', 'N/A'),
-            "Submission Time": selected_record.get('submission_time', 'N/A'),
-            "Status": selected_record.get('status', 'submitted'),  # Default to submitted instead of unknown
-            "Completion Time": selected_record.get('completion_time', 'N/A'),
-            "Cost": selected_record.get('metadata', {}).get('cost', 'N/A')
-        }
+        try:
+            info_data = {
+                "Snapshot ID": selected_record['snapshot_id'],
+                "Dataset ID": selected_record.get('dataset_id', 'N/A'),
+                "Records Limit": selected_record.get('records_limit', 'N/A'),
+                "Submission Time": selected_record.get('submission_time', 'N/A'),
+                "Status": selected_record.get('status', 'submitted'),  # Default to submitted instead of unknown
+                "Completion Time": selected_record.get('completion_time', 'N/A'),
+                "Cost": selected_record.get('metadata', {}).get('cost', 'N/A') if selected_record.get('metadata') else 'N/A'
+            }
+        except (AttributeError, TypeError, KeyError) as e:
+            st.error(f"❌ Error accessing snapshot metadata: {e}")
+            st.info("🔄 Please refresh the page or select a different snapshot.")
+            return
         
         # Add last modified time if available
         last_modified = selected_record.get('last_modified')
