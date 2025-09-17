@@ -493,15 +493,19 @@ def main():
         return
     
     # Get selected record (from session state or first record)
-    if 'selected_snapshot' in st.session_state:
+    if 'selected_snapshot' in st.session_state and st.session_state['selected_snapshot'] is not None:
         selected_record = st.session_state['selected_snapshot']
+        # Validate that the selected record still exists in our records
+        if not any(r.get('snapshot_id') == selected_record.get('snapshot_id') for r in records):
+            selected_record = records[0]
+            st.session_state['selected_snapshot'] = selected_record
     else:
         selected_record = records[0]
         st.session_state['selected_snapshot'] = selected_record
     
-    # Safety check for selected_record
-    if not selected_record:
-        st.error("❌ No snapshot record selected.")
+    # Final safety check for selected_record
+    if not selected_record or not isinstance(selected_record, dict):
+        st.error("❌ Invalid snapshot record selected.")
         return
     
     snapshot_id = selected_record['snapshot_id']
@@ -574,6 +578,10 @@ def main():
         
         
         # Basic metadata
+        if not selected_record:
+            st.error("❌ No snapshot record selected.")
+            return
+            
         info_data = {
             "Snapshot ID": selected_record['snapshot_id'],
             "Dataset ID": selected_record.get('dataset_id', 'N/A'),
