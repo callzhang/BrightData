@@ -382,14 +382,26 @@ def main():
     
     # Status summary in sidebar
     status_counts = {}
+    download_counts = {'Downloaded': 0, 'Not Downloaded': 0}
+    
     for record in records:
         status = record.get('status', 'submitted')  # Default to submitted instead of unknown
         status_counts[status] = status_counts.get(status, 0) + 1
+        
+        # Count download status
+        if record.get('downloaded'):
+            download_counts['Downloaded'] += 1
+        else:
+            download_counts['Not Downloaded'] += 1
     
     # Display status summary
     if status_counts:
         status_text = " | ".join([f"{status}: {count}" for status, count in status_counts.items()])
         st.sidebar.caption(f"Status: {status_text}")
+    
+    # Display download summary
+    download_text = " | ".join([f"{status}: {count}" for status, count in download_counts.items()])
+    st.sidebar.caption(f"Downloads: {download_text}")
     
     # Display all snapshots in sidebar
     for i, record in enumerate(records):
@@ -439,9 +451,13 @@ def main():
             }
             icon = status_icons.get(status, '📋')
             
+            # Add download status to display
+            download_icon = "✅" if record.get('downloaded') else "❌"
+            download_text = "Downloaded" if record.get('downloaded') else "Not Downloaded"
+            
             # Create clickable area with title
             if st.sidebar.button(
-                f"{icon} {status.upper()}\n{title}\n[{records_limit} Records] {filter_count} filters\n{date_str}",
+                f"{icon} {status.upper()}\n{title}\n[{records_limit} Records] {filter_count} filters\n{download_icon} {download_text}\n{date_str}",
                 key=f"select_{i}",
                 help="Click to select this snapshot",
                 use_container_width=True
@@ -590,12 +606,20 @@ def main():
             return
             
         try:
+            # Determine download status
+            download_status = "❌ Not Downloaded"
+            if selected_record.get('downloaded'):
+                download_status = "✅ Downloaded"
+                if selected_record.get('download_time'):
+                    download_status += f" ({selected_record.get('download_time', '')[:10]})"
+            
             info_data = {
                 "Snapshot ID": selected_record['snapshot_id'],
                 "Dataset ID": selected_record.get('dataset_id', 'N/A'),
                 "Records Limit": selected_record.get('records_limit', 'N/A'),
                 "Submission Time": selected_record.get('submission_time', 'N/A'),
                 "Status": selected_record.get('status', 'submitted'),  # Default to submitted instead of unknown
+                "Download Status": download_status,
                 "Completion Time": selected_record.get('completion_time', 'N/A'),
                 "Cost": selected_record.get('metadata', {}).get('cost', 'N/A') if selected_record.get('metadata') else 'N/A'
             }
