@@ -105,13 +105,9 @@ def load_snapshot_records():
 
 def check_snapshot_status(snapshot_id, dataset_id):
     """Check the current status of a snapshot from the API."""
-    try:
-        brightdata = BrightDataFilter(dataset_id)
-        metadata = brightdata.get_snapshot_metadata(snapshot_id)
-        return metadata
-    except Exception as e:
-        print(f"Error checking status for {snapshot_id}: {e}")
-        return None
+    brightdata = BrightDataFilter(dataset_id)
+    metadata = brightdata.get_snapshot_metadata(snapshot_id)
+    return metadata
 
 def update_snapshot_status(record):
     """Update the status of a snapshot record if it's not completed."""
@@ -476,28 +472,24 @@ def main():
             ):
                 st.session_state['selected_snapshot'] = record
                 # Check status when selecting a snapshot
-                try:
-                    from util.brightdata import BrightDataFilter
-                    brightdata = BrightDataFilter('amazon_walmart')
-                    metadata = brightdata.get_snapshot_metadata(record['snapshot_id'])
+                brightdata = BrightDataFilter('amazon_walmart')
+                metadata = brightdata.get_snapshot_metadata(record['snapshot_id'])
+                
+                # Update the record with latest status
+                if metadata:
+                    record['status'] = metadata.get('status', record.get('status', 'submitted'))
+                    record['dataset_size'] = metadata.get('dataset_size')
+                    record['file_size'] = metadata.get('file_size')
+                    record['cost'] = metadata.get('cost')
                     
-                    # Update the record with latest status
-                    if metadata:
-                        record['status'] = metadata.get('status', record.get('status', 'submitted'))
-                        record['dataset_size'] = metadata.get('dataset_size')
-                        record['file_size'] = metadata.get('file_size')
-                        record['cost'] = metadata.get('cost')
-                        
-                        # Save updated record
-                        import json
-                        record_file = Path("snapshot_records") / f"{record['snapshot_id']}.json"
-                        if record_file.exists():
-                            with open(record_file, 'w') as f:
-                                json.dump(record, f, indent=2)
-                        
-                        st.session_state['selected_snapshot'] = record
-                except Exception as e:
-                    st.sidebar.error(f"⚠️ Could not check status: {e}")
+                    # Save updated record
+                    import json
+                    record_file = Path("snapshot_records") / f"{record['snapshot_id']}.json"
+                    if record_file.exists():
+                        with open(record_file, 'w') as f:
+                            json.dump(record, f, indent=2)
+                    
+                    st.session_state['selected_snapshot'] = record
                 
                 st.rerun()
     
@@ -770,79 +762,74 @@ def main():
                         st.info("💡 Snapshot ID should start with 'snap_'")
                         return
                     
-                    try:
-                        # Initialize BrightData filter
-                        dataset_id = selected_record.get('dataset_id')
-                        if not dataset_id:
-                            st.error("❌ No dataset ID found in record")
-                            return
+                    # Initialize BrightData filter
+                    dataset_id = selected_record.get('dataset_id')
+                    if not dataset_id:
+                        st.error("❌ No dataset ID found in record")
+                        return
+                    
+                    brightdata = BrightDataFilter(dataset_id)
+                    
+                    # Show download progress
+                    with st.spinner(f"Downloading {download_snapshot_id} in {download_format.upper()} format..."):
+                        # Download the snapshot content
+                        response = brightdata.download_snapshot_content(
+                            download_snapshot_id,
+                            format=download_format,
+                            compress=compress_data
+                        )
                         
-                        brightdata = BrightDataFilter(dataset_id)
-                        
-                        # Show download progress
-                        with st.spinner(f"Downloading {download_snapshot_id} in {download_format.upper()} format..."):
-                            # Download the snapshot content
-                            response = brightdata.download_snapshot_content(
-                                download_snapshot_id,
-                                format=download_format,
-                                compress=compress_data
-                            )
+                        if response.status_code == 200:
+                            # Check if the response contains actual data or a status message
+                            content = response.text.strip()
                             
-                            if response.status_code == 200:
-                                # Check if the response contains actual data or a status message
-                                content = response.text.strip()
+                            # Check for status messages
+                            if content in ["Snapshot is building. Try again in a few minutes", 
+                                          "Snapshot not ready", 
+                                          "Snapshot is processing",
+                                          "No data available"]:
+                                st.warning(f"⚠️ {content}")
+                                st.info("💡 The snapshot is still being processed. Please wait and try again later.")
+                                return
+                            
+                            # Save the downloaded data
+                            downloads_dir = Path("data/downloads")
+                            downloads_dir.mkdir(exist_ok=True)
+                            
+                            file_extension = f".{download_format}"
+                            if compress_data:
+                                file_extension += ".gz"
+                            
+                            file_path = downloads_dir / f"{download_snapshot_id}{file_extension}"
+                            
+                            with open(file_path, 'wb') as f:
+                                f.write(response.content)
+                            
+                            # Update the record to mark as downloaded
+                            record_file = Path("snapshot_records") / f"{download_snapshot_id}.json"
+                            if record_file.exists():
+                                with open(record_file, 'r') as f:
+                                    record = json.load(f)
                                 
-                                # Check for status messages
-                                if content in ["Snapshot is building. Try again in a few minutes", 
-                                              "Snapshot not ready", 
-                                              "Snapshot is processing",
-                                              "No data available"]:
-                                    st.warning(f"⚠️ {content}")
-                                    st.info("💡 The snapshot is still being processed. Please wait and try again later.")
-                                    return
+                                record['downloaded'] = True
+                                record['download_time'] = datetime.now().isoformat()
+                                record['download_format'] = download_format
+                                record['download_file'] = str(file_path)
                                 
-                                # Save the downloaded data
-                                downloads_dir = Path("data/downloads")
-                                downloads_dir.mkdir(exist_ok=True)
-                                
-                                file_extension = f".{download_format}"
-                                if compress_data:
-                                    file_extension += ".gz"
-                                
-                                file_path = downloads_dir / f"{download_snapshot_id}{file_extension}"
-                                
-                                with open(file_path, 'wb') as f:
-                                    f.write(response.content)
-                                
-                                # Update the record to mark as downloaded
-                                record_file = Path("snapshot_records") / f"{download_snapshot_id}.json"
-                                if record_file.exists():
-                                    with open(record_file, 'r') as f:
-                                        record = json.load(f)
-                                    
-                                    record['downloaded'] = True
-                                    record['download_time'] = datetime.now().isoformat()
-                                    record['download_format'] = download_format
-                                    record['download_file'] = str(file_path)
-                                    
-                                    with open(record_file, 'w') as f:
-                                        json.dump(record, f, indent=2)
-                                
-                                st.success(f"✅ Successfully downloaded {download_snapshot_id}!")
-                                st.info(f"📁 File saved to: `{file_path}`")
-                                st.info(f"📊 Size: {len(response.content) / 1024 / 1024:.2f} MB")
-                                
-                                # Refresh the page to show updated status
-                                st.rerun()
-                                
-                            else:
-                                st.error(f"❌ Download failed: HTTP {response.status_code}")
-                                if response.text:
-                                    st.error(f"Error details: {response.text}")
-                                    
-                    except Exception as e:
-                        st.error(f"❌ Download error: {str(e)}")
-                        st.info("💡 Make sure the snapshot is ready and you have sufficient credits")
+                                with open(record_file, 'w') as f:
+                                    json.dump(record, f, indent=2)
+                            
+                            st.success(f"✅ Successfully downloaded {download_snapshot_id}!")
+                            st.info(f"📁 File saved to: `{file_path}`")
+                            st.info(f"📊 Size: {len(response.content) / 1024 / 1024:.2f} MB")
+                            
+                            # Refresh the page to show updated status
+                            st.rerun()
+                            
+                        else:
+                            st.error(f"❌ Download failed: HTTP {response.status_code}")
+                            if response.text:
+                                st.error(f"Error details: {response.text}")
     
     with col2:
         # Filter Criteria
