@@ -486,12 +486,23 @@ def main():
                     st.rerun()
     
     # Main content area
+    # Check if we have any records
+    if not records:
+        st.warning("⚠️ No snapshot records found in the snapshot_records directory.")
+        st.info("💡 Make sure you have run some queries to generate snapshots.")
+        return
+    
     # Get selected record (from session state or first record)
     if 'selected_snapshot' in st.session_state:
         selected_record = st.session_state['selected_snapshot']
     else:
         selected_record = records[0]
         st.session_state['selected_snapshot'] = selected_record
+    
+    # Safety check for selected_record
+    if not selected_record:
+        st.error("❌ No snapshot record selected.")
+        return
     
     snapshot_id = selected_record['snapshot_id']
     
