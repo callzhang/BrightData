@@ -834,7 +834,6 @@ def main():
                                 # Snapshot is still building, retry after delay
                                 if attempt < max_retries:
                                     st.info(f"⏳ Snapshot still building, retrying in {retry_delay} seconds... (attempt {attempt + 1}/{max_retries + 1})")
-                                    import time
                                     time.sleep(retry_delay)
                                     continue
                                 else:
