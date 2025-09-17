@@ -1,6 +1,18 @@
 # BrightData Database System
 
-A comprehensive Python library for accessing and filtering data using the BrightData database API across multiple datasets. This system provides intuitive, type-safe database queries with built-in support for Amazon Products, Amazon-Walmart Comparison, Shopee Products, and other datasets, plus a complete snapshot management system for handling long-running database operations.
+A comprehensive **open-source** Python library for accessing and filtering data using the BrightData database API across multiple datasets. This system provides intuitive, type-safe database queries with built-in support for Amazon Products, Amazon-Walmart Comparison, Shopee Products, and other datasets, plus a complete snapshot management system for handling long-running database operations.
+
+## 🔓 Open Source Repository
+
+This repository is open-source and focuses on providing general-purpose tools for BrightData data access. It includes:
+- Core BrightData API integration
+- Multi-dataset filtering capabilities
+- Snapshot management system
+- Streamlit UI for data visualization
+- CLI tools for data management
+- Comprehensive documentation and examples
+
+**Note**: Private and confidential content (such as specific business strategies) is maintained separately and excluded from this public repository.
 
 ## 🚀 Features
 

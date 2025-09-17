@@ -75,3 +75,6 @@ logs/
 meta/
 amazon_strategy.ipynb
 .cursor/
+
+# Private/confidential content
+private/
