@@ -483,7 +483,6 @@ def main():
                     record['cost'] = metadata.get('cost')
                     
                     # Save updated record
-                    import json
                     record_file = Path("snapshot_records") / f"{record['snapshot_id']}.json"
                     if record_file.exists():
                         with open(record_file, 'w') as f:
