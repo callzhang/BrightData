@@ -178,32 +178,41 @@ def load_snapshot_data(snapshot_id):
         data_file = downloads_dir / f"{snapshot_id}{ext}"
         if data_file.exists():
             try:
-                # First, check if the file contains valid data
-                with open(data_file, 'r', encoding='utf-8') as f:
-                    content = f.read().strip()
-                
-                # Check if the content is a status message instead of data
-                if content in ["Snapshot is building. Try again in a few minutes", 
-                              "Snapshot not ready", 
-                              "Snapshot is processing",
-                              "No data available"]:
-                    st.warning(f"⚠️ {content}")
-                    return None
-                
-                # Check if the file is empty
-                if not content:
+                # Check if the file is empty first
+                if data_file.stat().st_size == 0:
                     st.warning("⚠️ Downloaded file is empty")
                     return None
                 
-                # Try to load the data based on format
-                if ext == '.json':
-                    return pd.read_json(data_file)
-                elif ext == '.csv':
-                    return pd.read_csv(data_file)
-                elif ext == '.json.gz':
-                    return pd.read_json(data_file, compression='gzip')
-                elif ext == '.csv.gz':
-                    return pd.read_csv(data_file, compression='gzip')
+                # For compressed files, skip the content check and go directly to loading
+                if ext.endswith('.gz'):
+                    # Try to load the data based on format
+                    if ext == '.json.gz':
+                        return pd.read_json(data_file, compression='gzip')
+                    elif ext == '.csv.gz':
+                        return pd.read_csv(data_file, compression='gzip')
+                else:
+                    # For non-compressed files, check content first
+                    with open(data_file, 'r', encoding='utf-8') as f:
+                        content = f.read().strip()
+                    
+                    # Check if the content is a status message instead of data
+                    if content in ["Snapshot is building. Try again in a few minutes", 
+                                  "Snapshot not ready", 
+                                  "Snapshot is processing",
+                                  "No data available"]:
+                        st.warning(f"⚠️ {content}")
+                        return None
+                    
+                    # Check if the file is empty
+                    if not content:
+                        st.warning("⚠️ Downloaded file is empty")
+                        return None
+                    
+                    # Try to load the data based on format
+                    if ext == '.json':
+                        return pd.read_json(data_file)
+                    elif ext == '.csv':
+                        return pd.read_csv(data_file)
                     
             except pd.errors.EmptyDataError:
                 st.warning("⚠️ Downloaded file contains no data")
