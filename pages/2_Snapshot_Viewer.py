@@ -579,10 +579,23 @@ def main():
             status = record.get('status', 'submitted')  # Default to submitted instead of unknown
         status_counts[status] = status_counts.get(status, 0) + 1
     
-    # Display status summary
-    if status_counts:
-        status_text = " | ".join([f"{status}: {count}" for status, count in status_counts.items()])
-        st.sidebar.caption(f"Status: {status_text}")
+    # Display snapshot statistics in sidebar
+    st.sidebar.divider()
+    st.sidebar.subheader("📊 Snapshot Statistics")
+    
+    # Calculate stats
+    total_count = len(records)
+    completed_count = sum(1 for r in records if r.get('status', 'submitted') in ['completed', 'ready'])
+    processing_count = sum(1 for r in records if r.get('status', 'submitted') in ['submitted', 'processing', 'building'])
+    failed_count = sum(1 for r in records if r.get('status', 'submitted') == 'failed')
+    
+    # Display metrics in sidebar
+    st.sidebar.metric("📊 Total Snapshots", total_count)
+    st.sidebar.metric("✅ Completed", completed_count)
+    st.sidebar.metric("⏳ Processing", processing_count)
+    st.sidebar.metric("❌ Failed", failed_count)
+    
+    st.sidebar.divider()
     
     # Display all snapshots in sidebar
     for i, record in enumerate(records):
@@ -757,25 +770,7 @@ def main():
     
     snapshot_id = selected_record['snapshot_id']
     
-    # Main content area
-    col1, col2, col3, col4 = st.columns(4)
-    
-    with col1:
-        st.metric("📊 Total Snapshots", len(records))
-    
-    with col2:
-        completed_count = sum(1 for r in records if r.get('status', 'submitted') in ['completed', 'ready'])
-        st.metric("✅ Completed", completed_count)
-    
-    with col3:
-        processing_count = sum(1 for r in records if r.get('status', 'submitted') in ['submitted', 'processing', 'building'])
-        st.metric("⏳ Processing", processing_count)
-    
-    with col4:
-        failed_count = sum(1 for r in records if r.get('status', 'submitted') == 'failed')
-        st.metric("❌ Failed", failed_count)
-    
-    st.divider()
+    # Main content area - stats moved to sidebar
     
     # Title and Description editing section
     
