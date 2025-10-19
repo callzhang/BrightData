@@ -3,7 +3,16 @@
 This document describes the fields available in the Brightdata Amazon Products Dataset for programmatic filtering and analysis using the [Brightdata Marketplace Dataset API](https://docs.brightdata.com/api-reference/marketplace-dataset-api/filter-dataset).
 
 ## Dataset Overview
-The Amazon Products Dataset provides comprehensive product information from Amazon, including product details, pricing, reviews, seller information, and marketplace data. This dataset contains real-time Amazon product data for analysis and research purposes.
+The Amazon Products Dataset provides comprehensive product data from Amazon, including product details, pricing, availability, seller information, reviews, and sales metrics. This dataset enables product research, market analysis, competitive intelligence, and e-commerce insights.
+
+**Key Features:**
+- **50+ fields** covering comprehensive Amazon product data
+- **Real-time pricing** and availability information
+- **Sales metrics** including recent purchase data
+- **Review and rating** information
+- **Seller and marketplace** data
+- **Product categorization** and ranking information
+- **Media content** including images and videos
 
 ## API Usage
 
@@ -21,7 +30,7 @@ POST https://api.brightdata.com/datasets/filter
 ### Request Format
 ```json
 {
-  "dataset_id": "gd_l7q7dkf244hwjntr0",
+  "dataset_id": "gd_m45m1u911dsa4274pi",
   "records_limit": 1000,
   "filter": {
     "name": "field_name",
@@ -52,376 +61,236 @@ Based on the [Brightdata API documentation](https://docs.brightdata.com/api-refe
 | `is_null` | Any | Tests if the field value is equal to NULL |
 | `is_not_null` | Any | Tests if the field value is not equal to NULL |
 
-## Field Descriptions
+## Key Fields for Analysis
 
-Based on the actual CSV data structure, here are the available fields:
+### Sales and Performance Metrics
+- **`bought_past_month`** (number): Number of units bought in the past month
+  - *Example*: 150
+  - *Use case*: Analyze recent sales trends and product popularity
+- **`rating`** (number): Product rating (1-5)
+- **`reviews_count`** (number): Number of product reviews
+- **`is_available`** (boolean): Product availability status
 
-### Core Product Information
-- **`title`** (string): The name of the product as listed on Amazon
-  - *Example*: "Vital Farms, Large Grade A Eggs, 12 Count"
-  - *Filtering examples*: 
-    ```json
-    {"name": "title", "operator": "includes", "value": "iPhone"}
-    {"name": "title", "operator": "=", "value": "Vital Farms, Large Grade A Eggs, 12 Count"}
-    ```
-
-- **`asin`** (string): Amazon Standard Identification Number - unique identifier for each product
-  - *Example*: "B0849MZ45Y"
-  - *Filtering examples*:
-    ```json
-    {"name": "asin", "operator": "=", "value": "B0849MZ45Y"}
-    {"name": "asin", "operator": "in", "value": ["B0849MZ45Y", "B0CQ2XTP5F"]}
-    ```
-
-- **`brand`** (string): The brand associated with the product
-  - *Example*: "VITAL FARMS", "KCULE", "Stonyfield Organic"
-  - *Filtering examples*:
-    ```json
-    {"name": "brand", "operator": "=", "value": "VITAL FARMS"}
-    {"name": "brand", "operator": "in", "value": ["KCULE", "Stonyfield Organic"]}
-    ```
-
-- **`description`** (string): Detailed description of the product
-  - *Example*: "Vital Farms alfresco pasture raised large grade a eggs are produced by happy, healthy hens..."
-  - *Filtering examples*:
-    ```json
-    {"name": "description", "operator": "includes", "value": "organic"}
-    {"name": "description", "operator": "includes", "value": "stainless steel"}
-    ```
-
-- **`categories`** (array): The category or categories under which the product is listed (JSON array format)
-  - *Example*: ["Grocery & Gourmet Food", "Dairy, Eggs & Plant-Based Alternatives", "Eggs & Egg Substitutes", "Whole Eggs"]
-  - *Filtering examples*:
-    ```json
-    {"name": "categories", "operator": "array_includes", "value": "Electronics"}
-    {"name": "categories", "operator": "array_includes", "value": "Grocery & Gourmet Food"}
-    ```
+### Product Information
+- **`title`** (text): Product title
+- **`brand`** (text): Product brand
+- **`description`** (text): Brief description of the product
+- **`asin`** (text): Unique identifier for each product (Amazon Standard Identification Number)
+- **`categories`** (array): Product categories
 
 ### Pricing Information
-- **`initial_price`** (decimal): The original price of the product before any discounts
-  - *Example*: 8.49, 9.98, 7.99
-  - *Filtering examples*:
-    ```json
-    {"name": "initial_price", "operator": ">", "value": "100"}
-    {"name": "initial_price", "operator": ">=", "value": "50"}
-    ```
-
-- **`final_price`** (decimal): The current/final price of the product
-  - *Example*: 8.49, 9.98, 7.99
-  - *Filtering examples*:
-    ```json
-    {"name": "final_price", "operator": "<=", "value": "200"}
-    {"name": "final_price", "operator": "=", "value": "8.49"}
-    ```
-
-- **`currency`** (string): The currency in which the product is priced
-  - *Example*: "USD"
-  - *Filtering examples*:
-    ```json
-    {"name": "currency", "operator": "=", "value": "USD"}
-    {"name": "currency", "operator": "in", "value": ["USD", "EUR", "GBP"]}
-    ```
-
-- **`discount`** (decimal): Any discount applied to the product's initial price
-  - *Example*: null (no discount), 5.00 (discount amount)
-  - *Filtering examples*:
-    ```json
-    {"name": "discount", "operator": ">", "value": "0"}
-    {"name": "discount", "operator": "is_not_null", "value": null}
-    ```
-
-### Availability & Stock
-- **`availability`** (string): The stock status of the product
-  - *Example*: "In Stock", "Out of Stock"
-  - *Filtering examples*:
-    ```json
-    {"name": "availability", "operator": "=", "value": "In Stock"}
-    {"name": "availability", "operator": "!=", "value": "Out of Stock"}
-    ```
-
-- **`is_available`** (boolean): Boolean flag indicating if the product is available
-  - *Example*: true, false
-  - *Filtering examples*:
-    ```json
-    {"name": "is_available", "operator": "=", "value": "true"}
-    ```
+- **`final_price`** (price): Final price of the product
+- **`initial_price`** (price): Initial price before discounts
+- **`currency`** (text): Currency of the product
+- **`discount`** (text): Product discount information
 
 ### Seller Information
-- **`seller_name`** (string): The name of the seller offering the product
-  - *Example*: "Amazon.com", "Kcule®", "Ama***.co***"
-  - *Filtering examples*:
-    ```json
-    {"name": "seller_name", "operator": "=", "value": "Amazon.com"}
-    {"name": "seller_name", "operator": "includes", "value": "Amazon"}
-    ```
+- **`seller_name`** (text): Seller name
+- **`seller_id`** (text): Unique identifier for each seller
+- **`buybox_seller`** (text): Seller in the buy box
+- **`number_of_sellers`** (number): Number of sellers for the product
 
-- **`seller_id`** (string): A unique identifier for the seller
-  - *Example*: "ATVPDKIKX0DER", "A2VDSVO2R3Q720"
-  - *Filtering examples*:
-    ```json
-    {"name": "seller_id", "operator": "=", "value": "ATVPDKIKX0DER"}
-    ```
+## Complete Field Descriptions
 
-- **`buybox_seller`** (string): The seller who currently holds the buy box
-  - *Example*: "Kcule®", "Amazon.com"
-  - *Filtering examples*:
-    ```json
-    {"name": "buybox_seller", "operator": "=", "value": "Amazon.com"}
-    ```
+### Basic Product Information
+- **`title`** (text): Product title on Amazon
+- **`brand`** (text): Product brand on Amazon
+- **`description`** (text): Brief description of the product
+- **`asin`** (text): Unique identifier for each product (Amazon Standard Identification Number)
+- **`parent_asin`** (text): Parent ASIN of the product
+- **`input_asin`** (text): Input ASIN (currently inactive)
 
-- **`number_of_sellers`** (integer): Number of sellers offering this product
-  - *Example*: 1, 5, 10
-  - *Filtering examples*:
-    ```json
-    {"name": "number_of_sellers", "operator": ">", "value": "1"}
-    ```
+### Pricing Information
+- **`initial_price`** (price): Initial price before discounts
+- **`final_price`** (price): Final price of the product
+- **`final_price_high`** (price): Highest value of the final price when it is a range
+- **`currency`** (text): Currency of the product
+- **`discount`** (text): Product discount information
 
-### Customer Reviews & Ratings
-- **`reviews_count`** (integer): The total number of reviews the product has received
-  - *Example*: 9024, 1039, 1214
-  - *Filtering examples*:
-    ```json
-    {"name": "reviews_count", "operator": ">", "value": "100"}
-    {"name": "reviews_count", "operator": ">=", "value": "1000"}
-    ```
+### Seller Information
+- **`seller_name`** (text): Seller name on Amazon
+- **`seller_id`** (text): Unique identifier for each seller
+- **`buybox_seller`** (text): Seller in the buy box
+- **`number_of_sellers`** (number): Number of sellers for the product
 
-- **`bought_past_month`** (number): Number of units bought in the past month - key metric for analyzing recent sales trends
-  - *Example*: 150, 500, 1200
-  - *Fill Rate*: 1.39%
-  - *Filtering examples*:
-    ```json
-    {"name": "bought_past_month", "operator": ">=", "value": "100"}
-    {"name": "bought_past_month", "operator": ">", "value": "500"}
-    {"name": "bought_past_month", "operator": "is_not_null", "value": null}
-    ```
+### Product Details
+- **`categories`** (array): Product categories
+- **`department`** (text): Department to which the product belongs
+- **`manufacturer`** (text): Manufacturer of the product
+- **`model_number`** (text): Model number of the product
+- **`upc`** (text): Universal Product Code
+- **`item_weight`** (text): Weight of the product
+- **`product_dimensions`** (text): Dimensions of the product
+- **`country_of_origin`** (text): Country of origin of the product
 
-- **`rating`** (decimal): The average rating given to the product by customers (typically 1-5 scale)
-  - *Example*: 4.9, 4.8, 4.5
-  - *Filtering examples*:
-    ```json
-    {"name": "rating", "operator": ">=", "value": "4.0"}
-    {"name": "rating", "operator": ">", "value": "4.5"}
-    ```
+### Reviews and Ratings
+- **`rating`** (number): Product rating
+- **`reviews_count`** (number): Number of reviews
+- **`answered_questions`** (number): Number of answered questions
+- **`top_review`** (text): Top review for the product
 
-### Product Details & Specifications
-- **`item_weight`** (string): Weight of the product
-  - *Example*: "1.77 Pounds", "1.2 ounces", "37.2 Ounces"
-  - *Filtering examples*:
-    ```json
-    {"name": "item_weight", "operator": "is_not_null", "value": null}
-    ```
+### Availability and Sales
+- **`availability`** (text): Product availability
+- **`is_available`** (boolean): Indication if the product is still available
+- **`bought_past_month`** (number): Number of units bought in the past month
 
-- **`product_dimensions`** (string): Physical dimensions of the product
-  - *Example*: "0.39 x 0.39 x 0.5 inches; 1.77 Pounds"
-  - *Filtering examples*:
-    ```json
-    {"name": "product_dimensions", "operator": "is_not_null", "value": null}
-    ```
+### Rankings and Categories
+- **`root_bs_rank`** (number): Best sellers rank in the general category
+- **`bs_rank`** (number): Best seller rank in the specific category
+- **`root_bs_category`** (text): Best seller root category
+- **`bs_category`** (text): Best seller category
+- **`subcategory_rank`** (array): Subcategory ranking information
 
-- **`model_number`** (string): Model number of the product
-  - *Example*: "u-4c-7501", "STEELTAG-SILVER-A"
-  - *Filtering examples*:
-    ```json
-    {"name": "model_number", "operator": "is_not_null", "value": null}
-    ```
+### Media and Content
+- **`images_count`** (number): Number of images
+- **`images`** (array): URLs of the product images
+- **`image_url`** (url): URL that links directly to the product image
+- **`video_count`** (number): Number of videos
+- **`video`** (boolean): Boolean indicating the presence of videos
+- **`videos`** (array): URLs of the product's videos
+- **`downloadable_videos`** (array): Downloadable video information
 
-- **`manufacturer`** (string): Manufacturer of the product
-  - *Example*: "VITAL FARMS", "KCULE", "Stonyfield Organic"
-  - *Filtering examples*:
-    ```json
-    {"name": "manufacturer", "operator": "=", "value": "VITAL FARMS"}
-    ```
+### Product Features and Details
+- **`features`** (array): Product features
+- **`product_details`** (array): Full product details
+- **`product_description`** (array): Detailed product description
+- **`variations`** (array): Details about the same product in different variations
+- **`delivery`** (array): Delivery-related information
+- **`format`** (array): Format-related information
 
-- **`department`** (string): Department/category of the product
-  - *Example*: "Grocery & Gourmet Food", "Clothing, Shoes & Jewelry", "Baby Products"
-  - *Filtering examples*:
-    ```json
-    {"name": "department", "operator": "=", "value": "Electronics"}
-    ```
+### Pricing and Buy Box
+- **`buybox_prices`** (object): Product price details
+- **`prices_breakdown`** (object): Detailed price breakdown
+- **`other_sellers_prices`** (array): Other sellers details who sell the product
 
-### Media & Images
-- **`images`** (array): URLs or links to images of the product (JSON array)
-  - *Example*: ["https://m.media-amazon.com/images/I/71zyUBNd3GL._SL1500_.jpg", ...]
-  - *Filtering examples*:
-    ```json
-    {"name": "images", "operator": "is_not_null", "value": null}
-    {"name": "images", "operator": "array_includes", "value": "https://"}
-    ```
-
-- **`images_count`** (integer): Number of product images available
-  - *Example*: 11, 7, 10
-  - *Filtering examples*:
-    ```json
-    {"name": "images_count", "operator": ">", "value": "5"}
-    ```
-
-- **`image_url`** (string): Primary image URL for the product
-  - *Example*: "https://m.media-amazon.com/images/I/71zyUBNd3GL._SL1500_.jpg"
-  - *Filtering examples*:
-    ```json
-    {"name": "image_url", "operator": "is_not_null", "value": null}
-    ```
-
-### Best Sellers & Rankings
-- **`root_bs_rank`** (integer): Best seller rank in the root category
-  - *Example*: null, 18745, 5557
-  - *Filtering examples*:
-    ```json
-    {"name": "root_bs_rank", "operator": "is_not_null", "value": null}
-    {"name": "root_bs_rank", "operator": "<=", "value": "10000"}
-    ```
-
-- **`bs_rank`** (integer): Best seller rank in the specific category
-  - *Example*: 40, 6
-  - *Filtering examples*:
-    ```json
-    {"name": "bs_rank", "operator": "<=", "value": "100"}
-    ```
-
-- **`root_bs_category`** (string): Root best seller category
-  - *Example*: "Clothing, Shoes & Jewelry", "Baby"
-  - *Filtering examples*:
-    ```json
-    {"name": "root_bs_category", "operator": "=", "value": "Electronics"}
-    ```
-
-- **`bs_category`** (string): Best seller category
-  - *Example*: "Luggage Tags", "Baby & Toddler Smoothies"
-  - *Filtering examples*:
-    ```json
-    {"name": "bs_category", "operator": "includes", "value": "Electronics"}
-    ```
-
-### Additional Product Information
-- **`date_first_available`** (string): Date when the product was first available on Amazon
-  - *Example*: "December 12, 2023"
-  - *Filtering examples*:
-    ```json
-    {"name": "date_first_available", "operator": "is_not_null", "value": null}
-    ```
-
-- **`url`** (string): Amazon product URL
-  - *Example*: "https://www.amazon.com/VITAL-FARMS-Large-Grade-Eggs/dp/B0849MZ45Y"
-  - *Filtering examples*:
-    ```json
-    {"name": "url", "operator": "is_not_null", "value": null}
-    ```
-
-- **`domain`** (string): Amazon domain
-  - *Example*: "https://www.amazon.com/"
-  - *Filtering examples*:
-    ```json
-    {"name": "domain", "operator": "=", "value": "https://www.amazon.com/"}
-    ```
-
-- **`upc`** (string): Universal Product Code
-  - *Example*: "861745000010", "052159703288"
-  - *Filtering examples*:
-    ```json
-    {"name": "upc", "operator": "is_not_null", "value": null}
-    ```
-
-### Complex Data Fields
-- **`product_details`** (array): Structured product details (JSON array of objects)
-  - *Example*: [{"type": "Product Dimensions", "value": "0.39 x 0.39 x 0.5 inches; 1.77 Pounds"}, ...]
-  - *Filtering examples*:
-    ```json
-    {"name": "product_details", "operator": "is_not_null", "value": null}
-    ```
-
-- **`variations`** (array): Product variations (colors, sizes, etc.) (JSON array of objects)
-  - *Example*: [{"asin": "B0CP65BYKJ", "color": "Classic Square-black", ...}, ...]
-  - *Filtering examples*:
-    ```json
-    {"name": "variations", "operator": "is_not_null", "value": null}
-    ```
-
-- **`features`** (array): Product features (JSON array)
-  - *Example*: ["MADE WITH FRESH AIR AND SUNSHINE Our hens are tended by hand on small family farms in the USA.", ...]
-  - *Filtering examples*:
-    ```json
-    {"name": "features", "operator": "array_includes", "value": "organic"}
-    ```
-
-- **`delivery`** (array): Delivery options (JSON array)
-  - *Example*: ["$9.95 for 2-hour delivery with Prime", "$4.99 delivery August 22 - 27."]
-  - *Filtering examples*:
-    ```json
-    {"name": "delivery", "operator": "array_includes", "value": "Prime"}
-    ```
+### Additional Information
+- **`date_first_available`** (text): Date when the product first became available
+- **`domain`** (url): URL of the product domain
+- **`url`** (url): URL that links directly to the product
+- **`origin_url`** (url): Original URL
+- **`seller_url`** (url): Seller URL
+- **`ingredients`** (text): Ingredients of the product, relevant mostly for food products
+- **`plus_content`** (boolean): Boolean indicating the presence of additional content
+- **`amazon_choice`** (boolean): Specifies if the product is Amazon's Choice
+- **`badge`** (text): Product badge (e.g., #1 Best Seller or Amazon's Choice)
+- **`climate_pledge_friendly`** (boolean): Climate pledge friendly status
+- **`sustainability_features`** (array): Sustainability features
+- **`from_the_brand`** (array): Brand-specific information
+- **`customer_says`** (text): Customer feedback summary
 
 ## Complex Filtering Examples
 
-### Combining Multiple Conditions
+### High-Rated Products with Recent Sales
 ```json
 {
-  "dataset_id": "gd_l7q7dkf244hwjntr0",
+  "dataset_id": "gd_m45m1u911dsa4274pi",
   "records_limit": 1000,
-  "filter": {
-    "operator": "and",
-    "filters": [
-      {"name": "rating", "operator": ">=", "value": "4.0"},
-      {"name": "reviews_count", "operator": ">", "value": "100"},
-      {"name": "availability", "operator": "=", "value": "In Stock"},
-      {"name": "currency", "operator": "=", "value": "USD"}
-    ]
-  }
-}
-```
-
-### High-Rated Products with Discounts
-```json
-{
-  "dataset_id": "gd_l7q7dkf244hwjntr0",
-  "records_limit": 500,
   "filter": {
     "operator": "and",
     "filters": [
       {"name": "rating", "operator": ">=", "value": "4.5"},
-      {"name": "discount", "operator": "is_not_null", "value": null},
-      {"name": "categories", "operator": "array_includes", "value": "Electronics"}
-    ]
-  }
-}
-```
-
-### Brand-Specific Products
-```json
-{
-  "dataset_id": "gd_l7q7dkf244hwjntr0",
-  "records_limit": 1000,
-  "filter": {
-    "operator": "and",
-    "filters": [
-      {"name": "brand", "operator": "in", "value": ["Apple", "Samsung", "Sony"]},
-      {"name": "department", "operator": "=", "value": "Electronics"},
+      {"name": "reviews_count", "operator": ">", "value": "100"},
+      {"name": "bought_past_month", "operator": ">", "value": "50"},
       {"name": "is_available", "operator": "=", "value": "true"}
     ]
   }
 }
 ```
 
-### Products with Multiple Sellers
+### Electronics Category Analysis
 ```json
 {
-  "dataset_id": "gd_l7q7dkf244hwjntr0",
+  "dataset_id": "gd_m45m1u911dsa4274pi",
   "records_limit": 1000,
   "filter": {
     "operator": "and",
     "filters": [
-      {"name": "number_of_sellers", "operator": ">", "value": "1"},
-      {"name": "buybox_seller", "operator": "!=", "value": "Amazon.com"}
+      {"name": "department", "operator": "=", "value": "Electronics"},
+      {"name": "is_available", "operator": "=", "value": "true"},
+      {"name": "final_price", "operator": "<=", "value": "500"},
+      {"name": "currency", "operator": "=", "value": "USD"}
+    ]
+  }
+}
+```
+
+### Amazon's Choice Products
+```json
+{
+  "dataset_id": "gd_m45m1u911dsa4274pi",
+  "records_limit": 500,
+  "filter": {
+    "operator": "and",
+    "filters": [
+      {"name": "amazon_choice", "operator": "=", "value": "true"},
+      {"name": "rating", "operator": ">=", "value": "4.0"},
+      {"name": "is_available", "operator": "=", "value": "true"}
+    ]
+  }
+}
+```
+
+### High-Volume Sales Products
+```json
+{
+  "dataset_id": "gd_m45m1u911dsa4274pi",
+  "records_limit": 1000,
+  "filter": {
+    "operator": "and",
+    "filters": [
+      {"name": "bought_past_month", "operator": ">", "value": "1000"},
+      {"name": "is_available", "operator": "=", "value": "true"},
+      {"name": "rating", "operator": ">=", "value": "4.0"},
+      {"name": "categories", "operator": "array_includes", "value": "Electronics"}
+    ]
+  }
+}
+```
+
+### Brand Analysis
+```json
+{
+  "dataset_id": "gd_m45m1u911dsa4274pi",
+  "records_limit": 1000,
+  "filter": {
+    "operator": "and",
+    "filters": [
+      {"name": "brand", "operator": "in", "value": ["Apple", "Samsung", "Sony"]},
+      {"name": "department", "operator": "=", "value": "Electronics"},
+      {"name": "is_available", "operator": "=", "value": "true"},
+      {"name": "final_price", "operator": ">", "value": "100"}
+    ]
+  }
+}
+```
+
+### Products with Delivery Constraints
+```json
+{
+  "dataset_id": "gd_m45m1u911dsa4274pi",
+  "records_limit": 1000,
+  "filter": {
+    "operator": "and",
+    "filters": [
+      {"name": "availability", "operator": "in", "value": ["only", "within", "limited", "unavailable"]},
+      {"name": "bought_past_month", "operator": ">", "value": "500"},
+      {"name": "rating", "operator": ">=", "value": "4.0"},
+      {"name": "is_available", "operator": "=", "value": "true"}
     ]
   }
 }
 ```
 
 ## Data Types Summary
-- **String fields**: title, asin, brand, description, currency, availability, seller_name, seller_id, buybox_seller, item_weight, product_dimensions, model_number, manufacturer, department, root_bs_category, bs_category, date_first_available, url, domain, upc
-- **Numeric fields**: initial_price, final_price, discount, reviews_count, rating, images_count, number_of_sellers, root_bs_rank, bs_rank, bought_past_month, answered_questions, video_count, max_quantity_available
-- **Boolean fields**: is_available, plus_content, video, amazon_choice, climate_pledge_friendly, premium_brand, amazon_prime
-- **Array fields**: categories, images, product_details, variations, features, delivery, videos, other_sellers_prices, editorial_reviews, sustainability_features
-- **Object fields**: buybox_prices, prices_breakdown, customers_say, variations_values, return_policy
+
+### Field Data Types
+- **Text fields**: title, brand, description, asin, parent_asin, input_asin, seller_name, seller_id, buybox_seller, department, manufacturer, model_number, upc, item_weight, product_dimensions, country_of_origin, top_review, date_first_available, domain, origin_url, ingredients, badge, root_bs_category, bs_category, customer_says, seller_url
+- **Price fields**: initial_price, final_price, final_price_high
+- **Number fields**: reviews_count, answered_questions, images_count, video_count, rating, root_bs_rank, bs_rank, number_of_sellers, bought_past_month
+- **Boolean fields**: is_available, plus_content, video, amazon_choice, climate_pledge_friendly
+- **Array fields**: categories, images, videos, downloadable_videos, features, product_details, product_description, variations, delivery, format, other_sellers_prices, subcategory_rank, sustainability_features, from_the_brand
+- **Object fields**: buybox_prices, prices_breakdown
+- **URL fields**: image_url, url
 
 ## API Response Format
 The API returns a snapshot ID that you can use to download the filtered data:
@@ -437,6 +306,28 @@ Use the snapshot ID to download the data:
 GET https://api.brightdata.com/datasets/snapshots/{snapshot_id}/download
 ```
 
+## Use Cases
+
+### Product Research
+- Analyze product performance and market trends
+- Study pricing strategies and promotional activities
+- Research product categories and competition
+
+### Market Analysis
+- Track product availability and stock levels
+- Monitor seller performance and marketplace dynamics
+- Analyze consumer preferences and buying patterns
+
+### Competitive Intelligence
+- Compare product offerings and pricing
+- Identify market opportunities and gaps
+- Track competitor product launches and strategies
+
+### E-commerce Optimization
+- Optimize product listings and descriptions
+- Improve pricing strategies based on market data
+- Enhance inventory management and supply chain decisions
+
 ## Notes for Programmatic Filtering
 1. All string comparisons are case-sensitive
 2. Array fields should use `array_includes` or `array_not_includes` for exact matches
@@ -448,61 +339,8 @@ GET https://api.brightdata.com/datasets/snapshots/{snapshot_id}/download
 8. Maximum nesting depth for filter groups is 3 levels
 9. The API has a 5-minute timeout for job completion
 10. Large result sets may be split into multiple parts for download
-
-## Using the bought_past_month Field
-
-The `bought_past_month` field is particularly valuable for analyzing recent sales trends and identifying trending products. Here are some practical use cases:
-
-### Finding Trending Products (High Recent Sales)
-```json
-{
-  "dataset_id": "gd_l7q7dkf244hwjntr0",
-  "records_limit": 1000,
-  "filter": {
-    "operator": "AND",
-    "filters": [
-      {"name": "bought_past_month", "operator": ">=", "value": "100"},
-      {"name": "rating", "operator": ">=", "value": "4.0"},
-      {"name": "final_price", "operator": "<=", "value": "200"},
-      {"name": "is_available", "operator": "=", "value": "true"}
-    ]
-  }
-}
-```
-
-### Finding Products with Recent Sales Data Available
-```json
-{
-  "dataset_id": "gd_l7q7dkf244hwjntr0",
-  "records_limit": 1000,
-  "filter": {
-    "operator": "AND",
-    "filters": [
-      {"name": "bought_past_month", "operator": "is_not_null", "value": null},
-      {"name": "bought_past_month", "operator": ">", "value": "0"},
-      {"name": "rating", "operator": ">=", "value": "4.5"}
-    ]
-  }
-}
-```
-
-### Finding High-Volume Recent Sales
-```json
-{
-  "dataset_id": "gd_l7q7dkf244hwjntr0",
-  "records_limit": 1000,
-  "filter": {
-    "operator": "AND",
-    "filters": [
-      {"name": "bought_past_month", "operator": ">", "value": "500"},
-      {"name": "reviews_count", "operator": ">=", "value": "1000"},
-      {"name": "rating", "operator": ">=", "value": "4.0"}
-    ]
-  }
-}
-```
-
-**Note**: `bought_past_month` has a 1.39% fill rate, so use `is_not_null` to filter for products with this data.
+11. Sales data (bought_past_month) reflects recent purchasing activity
+12. Price information is updated in real-time based on current marketplace conditions
 
 ## Dataset Source
-This dataset is provided by [Brightdata](https://brightdata.com/products/datasets/amazon/product) and contains real-time Amazon product data for analysis and research purposes. The dataset ID for this Amazon products dataset is `gd_l7q7dkf244hwjntr0`.
+This dataset is provided by [Brightdata](https://brightdata.com/products/datasets/amazon-products) and contains real-time product data from Amazon for analysis and research purposes. The dataset ID for this Amazon Products dataset is `gd_m45m1u911dsa4274pi`.

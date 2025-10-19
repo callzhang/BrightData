@@ -190,7 +190,12 @@ class BrightDataFilter:
         except ValueError as e:
             raise ValueError(f"Invalid dataset: {e}")
         
-        self.base_url = "https://api.brightdata.com/datasets"
+        # Load base URL from configuration if not provided
+        if base_url is None:
+            from .config import get_secret
+            self.base_url = get_secret('brightdata.base_url', 'https://api.brightdata.com/datasets')
+        else:
+            self.base_url = base_url
         self.headers = {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json"

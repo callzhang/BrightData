@@ -78,3 +78,5 @@ amazon_strategy.ipynb
 
 # Private/confidential content
 private/
+snapshot_records/
+data/**/

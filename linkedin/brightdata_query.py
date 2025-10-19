@@ -5,12 +5,18 @@ import pandas as pd
 from IPython.display import display
 
 # --- Configuration ---
-API_KEY = "5edee3b2-e38f-4a19-9f00-30915fad054d"
+from util.config import get_brightdata_api_key
+
+API_KEY = get_brightdata_api_key()
 DATASET_ID = "gd_l1viktl72bvl7bjuj0"
 
 # --- API Endpoint Definitions ---
-FILTER_API_URL = "https://api.brightdata.com/datasets/filter"
-SNAPSHOTS_BASE_URL = "https://api.brightdata.com/datasets/snapshots"
+from util.config import get_secret
+
+# Get API URLs from configuration
+BASE_URL = get_secret('brightdata.base_url', 'https://api.brightdata.com/datasets')
+FILTER_API_URL = f"{BASE_URL}/filter"
+SNAPSHOTS_BASE_URL = f"{BASE_URL}/snapshots"
 
 
 # --- Common Search Parameters ---
