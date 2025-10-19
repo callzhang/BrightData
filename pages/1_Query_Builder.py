@@ -147,16 +147,16 @@ def main():
                                for field_name, field in dataset_config.fields.items()}
                 field_options = list(field_choices.keys())
                 
-                # Get field description for help text
-                selected_field_name = field_choices.get(field_options[current_index] if current_index < len(field_options) else field_options[0], "")
-                field_description = dataset_config.fields.get(selected_field_name, {}).description if selected_field_name else ""
-                
-                # Find the current field index
+                # Find the current field index first
                 current_field = item.get('field', '')
                 try:
                     current_index = next(i for i, k in enumerate(field_options) if field_choices[k] == current_field)
                 except StopIteration:
                     current_index = 0
+                
+                # Get field description for help text
+                selected_field_name = field_choices.get(field_options[current_index] if current_index < len(field_options) else field_options[0], "")
+                field_description = dataset_config.fields.get(selected_field_name, {}).description if selected_field_name else ""
                 
                 field_key = st.selectbox(
                     "Field:",
