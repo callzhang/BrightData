@@ -168,7 +168,7 @@ class BrightDataFilter:
     supporting all available operators and field types from the BrightData API.
     """
     
-    def __init__(self, dataset: str = "amazon_products", storage_dir: str = "snapshot_records", api_key: str = None):
+    def __init__(self, dataset: str = "amazon_products", storage_dir: str = "snapshot_records", api_key: str = None, base_url: str = None):
         """
         Initialize the BrightData database connection.
         
@@ -176,6 +176,7 @@ class BrightDataFilter:
             dataset: Dataset name (e.g., 'amazon_products', 'amazon', 'shopee') or dataset ID
             storage_dir: Directory to store snapshot records (default: "snapshot_records")
             api_key: BrightData API key (optional, will load from secrets if not provided)
+            base_url: Base URL for API calls (optional, will load from secrets if not provided)
         """
         # Load API key from secrets if not provided
         if api_key is None:
