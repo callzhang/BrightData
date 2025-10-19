@@ -9,7 +9,7 @@ import os
 from pathlib import Path
 
 def main():
-    print("🚀 Launching BrightData Snapshot Viewer...")
+    print("🚀 Launching BrightData Manager...")
     print("=" * 50)
     
     # Check if we're in the right directory
@@ -33,19 +33,24 @@ def main():
             return
     
     # Launch the app
-    print("🌐 Starting web interface...")
+    print("🌐 Starting multi-page web interface...")
     print("📱 The app will open in your default browser")
     print("🛑 Press Ctrl+C to stop the server")
+    print()
+    print("📋 Available pages:")
+    print("   • Query Builder - Create and submit data queries")
+    print("   • Snapshot Viewer - View and analyze downloaded data")
+    print("   • Settings - Manage API credentials and configuration")
     print()
     
     try:
         subprocess.run([
-            sys.executable, "-m", "streamlit", "run", "snapshot_viewer.py",
+            sys.executable, "-m", "streamlit", "run", "app.py",
             "--server.port", "8501",
             "--server.address", "localhost"
         ])
     except KeyboardInterrupt:
-        print("\n👋 Snapshot Viewer stopped")
+        print("\n👋 BrightData Manager stopped")
 
 if __name__ == "__main__":
     main()
