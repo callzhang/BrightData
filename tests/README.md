@@ -1,59 +1,70 @@
-# 🧪 Main Project Test Suite
+# 🧪 BrightData Manager Test Suite
 
 ## Overview
 
-This directory contains tests for the main Walmart Insights project. Tests are organized to ensure all components work correctly together.
+This directory contains tests for the BrightData Manager project. Tests are organized to ensure all components work correctly together.
 
 ## Test Structure
 
 ```
 tests/
-├── __init__.py              # Test package initialization
-├── README.md               # This documentation
-├── run_tests.py            # Main test runner
-└── test_embedding.py       # Embedding system integration tests
+├── __init__.py                    # Test package initialization
+├── README.md                     # This documentation
+├── run_tests.py                  # Main test runner
+├── test_brightdata_filter.py     # Core API functionality tests
+└── test_streamlit_app.py         # Streamlit application tests
 ```
 
 ## Running Tests
 
 ### From Project Root:
 ```bash
-# Run all main project tests
+# Run all tests
 python tests/run_tests.py
 
-# Run specific embedding integration test
-python tests/test_embedding.py
+# Run specific test files
+python tests/test_brightdata_filter.py
+python tests/test_streamlit_app.py
 ```
 
 ### Individual Test Files:
 ```bash
-# Run embedding integration test
-python -m tests.test_embedding
+# Run core functionality tests
+python -m tests.test_brightdata_filter
+
+# Run Streamlit app tests
+python -m tests.test_streamlit_app
 ```
 
 ## Test Categories
 
-### 🔍 **Embedding System Integration Tests**
-- **File**: `test_embedding.py`
-- **Purpose**: Tests embedding system integration with main project
-- **Scope**: End-to-end functionality from main project perspective
+### 🔧 **Core Functionality Tests**
+- **File**: `test_brightdata_filter.py`
+- **Purpose**: Tests BrightDataFilter API interface and core functionality
+- **Scope**: API initialization, filter creation, dataset configuration
+
+### 🖥️ **Streamlit Application Tests**
+- **File**: `test_streamlit_app.py`
+- **Purpose**: Tests multi-page Streamlit application structure
+- **Scope**: App imports, configuration files, requirements
 
 ## Test Dependencies
 
 Tests require the following to be installed:
-- All main project dependencies (`requirements.txt`)
-- Embedding system dependencies (`embedding/requirements_embedding.txt`)
+- Core dependencies (`requirements.txt`)
+- UI dependencies (`requirements_ui.txt`)
 
 ## Test Environment
 
-Tests are designed to run in the main project environment and test integration between:
-- Main project components
-- Embedding system (as a submodule)
-- External APIs (BrightData, etc.)
+Tests are designed to run in the main project environment and test:
+- Core API functionality
+- Streamlit application structure
+- Configuration management
+- File structure validation
 
 ## Adding New Tests
 
-When adding new tests to the main project:
+When adding new tests to the project:
 
 1. **Create test file** in this directory
 2. **Follow naming convention**: `test_*.py`
@@ -78,5 +89,5 @@ When adding new tests to the main project:
 ### Debug Mode:
 ```bash
 # Run with verbose output
-python tests/run_tests.py --verbose
+python tests/run_tests.py
 ```
