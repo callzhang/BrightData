@@ -31,9 +31,28 @@ def download_snapshot_dialog(snapshot_id, selected_record, download_format):
     """Download confirmation dialog using proper st.dialog decorator."""
     st.warning("**You are about to download snapshot data that will incur costs.**")
     
-    # Get record count for cost calculation
-    records_limit = selected_record.get('records_limit', 1000)
-    estimated_cost = records_limit * 0.002
+    # Get actual record count from BrightData API
+    dataset_id = selected_record.get('dataset_id')
+    actual_records = None
+    actual_cost = None
+    
+    if dataset_id:
+        try:
+            brightdata = BrightDataFilter(dataset_id)
+            metadata = brightdata.get_snapshot_metadata(snapshot_id)
+            if metadata and 'dataset_size' in metadata:
+                actual_records = metadata.get('dataset_size')
+                actual_cost = actual_records * 0.002
+        except Exception as e:
+            st.warning(f"⚠️ Could not fetch actual record count: {e}")
+    
+    # Fallback to estimated values if we can't get actual count
+    if actual_records is None:
+        actual_records = selected_record.get('records_limit', 1000)
+        actual_cost = actual_records * 0.002
+        record_source = "Estimated"
+    else:
+        record_source = "Actual"
     
     # Display download details
     col1, col2 = st.columns(2)
@@ -41,8 +60,8 @@ def download_snapshot_dialog(snapshot_id, selected_record, download_format):
         st.write(f"**Snapshot ID**: `{snapshot_id}`")
         st.write(f"**Format**: {download_format.upper()}")
     with col2:
-        st.write(f"**Estimated Records**: {records_limit:,}")
-        st.write(f"**Estimated Cost**: ${estimated_cost:.4f}")
+        st.write(f"**Records**: {actual_records:,} ({record_source})")
+        st.write(f"**Cost**: ${actual_cost:.4f}")
     
     st.write("**Price**: $0.002 per record")
     st.divider()
@@ -1196,9 +1215,28 @@ def main():
         # Download section with popup confirmation
         st.write("**📥 Download Snapshot Data**")
         
-        # Get record count for cost calculation
-        records_limit = selected_record.get('records_limit', 1000)
-        estimated_cost = records_limit * 0.002
+        # Get actual record count from BrightData API
+        dataset_id = selected_record.get('dataset_id')
+        actual_records = None
+        actual_cost = None
+        record_source = "Estimated"
+        
+        if dataset_id:
+            try:
+                brightdata = BrightDataFilter(dataset_id)
+                metadata = brightdata.get_snapshot_metadata(snapshot_id)
+                if metadata and 'dataset_size' in metadata:
+                    actual_records = metadata.get('dataset_size')
+                    actual_cost = actual_records * 0.002
+                    record_source = "Actual"
+            except Exception as e:
+                st.warning(f"⚠️ Could not fetch actual record count: {e}")
+        
+        # Fallback to estimated values if we can't get actual count
+        if actual_records is None:
+            actual_records = selected_record.get('records_limit', 1000)
+            actual_cost = actual_records * 0.002
+            record_source = "Estimated"
         
         col_download1, col_download2 = st.columns(2)
         
@@ -1216,8 +1254,8 @@ def main():
                 key=f"format_{snapshot_id}"
             )
         
-        # Show cost information
-        st.info(f"💰 **Estimated Cost**: ${estimated_cost:.4f} (${0.002:.3f} per record × {records_limit:,} records)")
+        # Show cost information with actual record count
+        st.info(f"💰 **Cost**: ${actual_cost:.4f} (${0.002:.3f} per record × {actual_records:,} records - {record_source})")
         
         # Download confirmation dialog
         if st.session_state.get(f'show_download_dialog_{snapshot_id}', False):
