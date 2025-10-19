@@ -1079,7 +1079,23 @@ def main():
                     elif isinstance(value, (dict, list)):
                         try:
                             import json
-                            return json.dumps(value, indent=2, ensure_ascii=False)
+                            # Pretty format with better indentation and sorting
+                            formatted_json = json.dumps(
+                                value, 
+                                indent=2, 
+                                ensure_ascii=False,
+                                sort_keys=True,  # Sort keys for consistent display
+                                separators=(',', ': ')  # Clean separators
+                            )
+                            
+                            # Truncate very long JSON for display
+                            if len(formatted_json) > 500:
+                                lines = formatted_json.split('\n')
+                                if len(lines) > 10:
+                                    truncated = '\n'.join(lines[:10]) + '\n... (truncated)'
+                                    return truncated
+                            
+                            return formatted_json
                         except:
                             return str(value)
                     else:
@@ -1096,7 +1112,32 @@ def main():
                 if display_df[col].dtype == 'object':
                     display_df[col] = display_df[col].apply(format_json_field)
             
-            st.dataframe(display_df, width='stretch')
+            # Add option to view JSON in different formats
+            col_view1, col_view2 = st.columns([1, 1])
+            
+            with col_view1:
+                view_format = st.radio(
+                    "View Format:",
+                    options=["Table View", "JSON View"],
+                    index=0,
+                    help="Choose how to display the data"
+                )
+            
+            with col_view2:
+                if st.button("🔍 Show Sample JSON", help="Display a sample JSON record"):
+                    if len(df) > 0:
+                        sample_record = df.iloc[0].to_dict()
+                        st.json(sample_record)
+            
+            if view_format == "Table View":
+                st.dataframe(display_df, width='stretch')
+            else:
+                # JSON View - show first few records as JSON
+                st.write("**JSON View (First 3 Records):**")
+                for i in range(min(3, len(df))):
+                    st.write(f"**Record {i+1}:**")
+                    record_json = df.iloc[i].to_dict()
+                    st.json(record_json)
             
             # Column information
             st.subheader("📋 Column Information")
