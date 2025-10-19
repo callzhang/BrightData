@@ -975,7 +975,19 @@ def main():
             st.write(f"**{key}:** {value}")
         
         st.divider()
-        
+    
+    # Check if data is available (support multiple formats)
+    downloads_dir = Path("data/downloads")
+    data_file = None
+    data_available = False
+    
+    # Check for different file formats
+    for ext in ['.json', '.csv', '.json.gz', '.csv.gz']:
+        potential_file = downloads_dir / f"{snapshot_id}{ext}"
+        if potential_file.exists():
+            data_file = potential_file
+            data_available = True
+            break
     
     # Data Analysis (if data is available)
     if data_available:
@@ -1068,19 +1080,6 @@ def main():
     # Actions section at the bottom
     st.divider()
     st.subheader("🛠️ Actions")
-    
-    # Check if data is available (support multiple formats)
-    downloads_dir = Path("data/downloads")
-    data_file = None
-    data_available = False
-    
-    # Check for different file formats
-    for ext in ['.json', '.csv', '.json.gz', '.csv.gz']:
-        potential_file = downloads_dir / f"{snapshot_id}{ext}"
-        if potential_file.exists():
-            data_file = potential_file
-            data_available = True
-            break
     
     if data_available:
         st.success("✅ Data available for analysis")
