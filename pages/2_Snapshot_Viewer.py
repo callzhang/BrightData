@@ -860,6 +860,36 @@ def main():
             else:
                 st.write(f"**{key}:** {value}")
         
+        # Show error message if snapshot failed
+        if display_status == 'failed':
+            try:
+                # Get fresh status from API to get error details
+                brightdata = BrightDataFilter(selected_record.get('dataset_id', 'gd_l1viktl72bvl7bjuj0'))
+                metadata = brightdata.get_snapshot_metadata(snapshot_id)
+                
+                if metadata and metadata.get('warning'):
+                    st.error(f"❌ **Error:** {metadata.get('warning')}")
+                    if metadata.get('warning_code'):
+                        st.info(f"🔍 **Error Code:** {metadata.get('warning_code')}")
+                    
+                    # Provide helpful suggestions based on error type
+                    warning_code = metadata.get('warning_code', '')
+                    if warning_code == 'no_records_found':
+                        st.info("💡 **Suggestions:**")
+                        st.write("• Check if your filter field names match the dataset schema")
+                        st.write("• Verify that the values you're searching for exist in the dataset")
+                        st.write("• Try using less restrictive filter conditions")
+                        st.write("• Ensure you're querying the correct dataset")
+                    elif 'invalid' in warning_code.lower() or 'error' in warning_code.lower():
+                        st.info("💡 **Suggestions:**")
+                        st.write("• Check your filter syntax and field names")
+                        st.write("• Verify that filter values are in the correct format")
+                        st.write("• Try simplifying your query")
+                else:
+                    st.warning("⚠️ Snapshot failed - no additional error details available")
+            except Exception as e:
+                st.warning(f"⚠️ Could not fetch error details: {e}")
+        
         st.divider()
         
         # Prominent Time Information Section
