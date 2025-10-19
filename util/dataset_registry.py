@@ -333,10 +333,78 @@ class DatasetRegistry:
             }
         )
         
+        # LinkedIn Profiles Dataset (Actual BrightData fields - 42 fields)
+        linkedin_schema = DatasetSchema(
+            dataset_id="gd_l1viktl72bvl7bjuj0",
+            name="LinkedIn Profiles",
+            description="LinkedIn professional profiles data with career history, education, and network information",
+            fields={
+                # Core Profile Fields
+                "id": FieldDefinition("id", FieldType.STRING, "A unique identifier for the person's LinkedIn profile"),
+                "name": FieldDefinition("name", FieldType.STRING, "Profile name"),
+                "first_name": FieldDefinition("first_name", FieldType.STRING, "First name of the user"),
+                "last_name": FieldDefinition("last_name", FieldType.STRING, "Last name of the user"),
+                "city": FieldDefinition("city", FieldType.STRING, "Geographical location of the user"),
+                "country_code": FieldDefinition("country_code", FieldType.STRING, "Geographical location of the user"),
+                "location": FieldDefinition("location", FieldType.STRING, "Geographical location of the user"),
+                "position": FieldDefinition("position", FieldType.STRING, "The current job title or position of the profile"),
+                "about": FieldDefinition("about", FieldType.STRING, "A concise profile summary"),
+                "url": FieldDefinition("url", FieldType.STRING, "URL that link directly to the LinkedIn profile"),
+                "linkedin_id": FieldDefinition("linkedin_id", FieldType.STRING, "LinkedIn profile identifier"),
+                "linkedin_num_id": FieldDefinition("linkedin_num_id", FieldType.STRING, "Numeric LinkedIn profile ID"),
+                "input_url": FieldDefinition("input_url", FieldType.STRING, "The URL that was entered when starting the scraping process"),
+                "avatar": FieldDefinition("avatar", FieldType.STRING, "URL that link to the profile picture of the LinkedIn user"),
+                "banner_image": FieldDefinition("banner_image", FieldType.STRING, "Banner image"),
+                "default_avatar": FieldDefinition("default_avatar", FieldType.BOOLEAN, "Is the avatar picture the default avatar empty picture"),
+                "memorialized_account": FieldDefinition("memorialized_account", FieldType.BOOLEAN, "Boolean indicating if the account is memorialized"),
+                
+                # Network Metrics
+                "followers": FieldDefinition("followers", FieldType.NUMERIC, "How many users/companies following the profile"),
+                "connections": FieldDefinition("connections", FieldType.NUMERIC, "How many connections the profile has"),
+                "recommendations_count": FieldDefinition("recommendations_count", FieldType.NUMERIC, "A numeric count of the total number of recommendations that the user has received"),
+                
+                # Current Company Information
+                "current_company": FieldDefinition("current_company", FieldType.OBJECT, "Provides information about the user's current professional position"),
+                "current_company_company_id": FieldDefinition("current_company_company_id", FieldType.STRING, "The id of the latest/current company of the profile"),
+                "current_company_name": FieldDefinition("current_company_name", FieldType.STRING, "The name of the latest/current company of the profile"),
+                
+                # Professional Experience
+                "experience": FieldDefinition("experience", FieldType.ARRAY, "Contains information about user's professional history"),
+                
+                # Education
+                "educations_details": FieldDefinition("educations_details", FieldType.STRING, "Provides information about the user's educational background"),
+                "education": FieldDefinition("education", FieldType.ARRAY, "Provides information about the user's educational background"),
+                "courses": FieldDefinition("courses", FieldType.ARRAY, "Contains information about courses or educational programs that the user has undertaken"),
+                
+                # Skills and Certifications
+                "languages": FieldDefinition("languages", FieldType.ARRAY, "Contains information about the user's proficiency in different languages"),
+                "certifications": FieldDefinition("certifications", FieldType.ARRAY, "Licenses & Certifications"),
+                
+                # Content and Activity
+                "posts": FieldDefinition("posts", FieldType.ARRAY, "Contains information related to the user's last LinkedIn posts"),
+                "activity": FieldDefinition("activity", FieldType.ARRAY, "Any activity the user has regarding posts"),
+                "recommendations": FieldDefinition("recommendations", FieldType.ARRAY, "Recommendations that the user has received from their connections or colleagues on LinkedIn"),
+                
+                # Professional Development
+                "volunteer_experience": FieldDefinition("volunteer_experience", FieldType.ARRAY, "Contains information related to the user's volunteer work"),
+                "publications": FieldDefinition("publications", FieldType.ARRAY, "Published works or presentations"),
+                "patents": FieldDefinition("patents", FieldType.ARRAY, "Patents filed or granted"),
+                "projects": FieldDefinition("projects", FieldType.ARRAY, "Professional or academic projects"),
+                "organizations": FieldDefinition("organizations", FieldType.ARRAY, "Memberships in professional organizations"),
+                "honors_and_awards": FieldDefinition("honors_and_awards", FieldType.ARRAY, "Awards and recognitions received"),
+                
+                # Network and Discovery
+                "people_also_viewed": FieldDefinition("people_also_viewed", FieldType.ARRAY, "Provides a list of LinkedIn profiles that users who have viewed the user's profile, have viewed these as well"),
+                "similar_profiles": FieldDefinition("similar_profiles", FieldType.ARRAY, "Profiles similar to the current one"),
+                "bio_links": FieldDefinition("bio_links", FieldType.ARRAY, "External links added to the bio"),
+            }
+        )
+        
         # Register the datasets
         self.register_dataset(amazon_schema)
         self.register_dataset(amazon_walmart_schema)
         self.register_dataset(shopee_schema)
+        self.register_dataset(linkedin_schema)
     
     def get_field_reference(self, dataset_id: str) -> Dict[str, str]:
         """Get field reference for a specific dataset"""
@@ -381,6 +449,11 @@ DATASET_NAMES = {
     "shopee_products": "gd_lk122xxgf86xf97py",
     "shopee": "gd_lk122xxgf86xf97py",
     "shopee_product": "gd_lk122xxgf86xf97py",
+    
+    # LinkedIn Profiles
+    "linkedin_profiles": "gd_l1viktl72bvl7bjuj0",
+    "linkedin": "gd_l1viktl72bvl7bjuj0",
+    "linkedin_profile": "gd_l1viktl72bvl7bjuj0",
 }
 
 
