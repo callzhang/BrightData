@@ -446,7 +446,7 @@ def main():
                     "filter_type": type(filter_obj).__name__
                 })
                 
-                # Title input (mandatory)
+                # Title and description inputs
                 st.subheader("📝 Query Details")
                 query_title = st.text_input(
                     "Query Title *",
@@ -458,6 +458,14 @@ def main():
                 if not query_title.strip():
                     st.warning("⚠️ Please enter a title for your query")
                     st.stop()
+                
+                # Description input (optional)
+                query_description = st.text_area(
+                    "Query Description",
+                    placeholder="Describe what this query is looking for, its purpose, or any notes...",
+                    help="Optional description to help you remember what this query does",
+                    key="query_description"
+                )
                 
                 # Records limit input
                 col_limit1, col_limit2 = st.columns([1, 1])
@@ -495,7 +503,7 @@ def main():
                                 snapshot_id = brightdata.search_data(
                                     filter_obj=filter_obj,
                                     records_limit=records_limit,
-                                    description=f"Nested query with {st.session_state.filter_structure['operator']} logic",
+                                    description=query_description.strip() if query_description.strip() else f"Nested query with {st.session_state.filter_structure['operator']} logic",
                                     title=query_title.strip()
                                 )
                                 
@@ -509,6 +517,8 @@ def main():
                                 st.success(f"✅ Query submitted successfully!")
                                 st.info(f"📊 Snapshot ID: `{snapshot_id}`")
                                 st.info(f"📝 Title: {query_title.strip()}")
+                                if query_description.strip():
+                                    st.info(f"📄 Description: {query_description.strip()}")
                                 st.info(f"📈 Records Limit: {records_limit:,}")
                                 st.info(f"💰 Estimated Cost: ${estimated_cost:.4f}")
                                 st.info("💡 Go to Snapshot Viewer to monitor progress and download results")
