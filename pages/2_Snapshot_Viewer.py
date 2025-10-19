@@ -976,74 +976,6 @@ def main():
         
         st.divider()
         
-        # Actions section (moved from separate section)
-        st.subheader("🛠️ Actions")
-        
-        # Check if data is available (support multiple formats)
-        downloads_dir = Path("data/downloads")
-        data_file = None
-        data_available = False
-        
-        # Check for different file formats
-        for ext in ['.json', '.csv', '.json.gz', '.csv.gz']:
-            potential_file = downloads_dir / f"{snapshot_id}{ext}"
-            if potential_file.exists():
-                data_file = potential_file
-                data_available = True
-                break
-        
-        if data_available:
-            st.success("✅ Data available for analysis")
-        else:
-            st.warning("⚠️ Data not downloaded yet")
-            
-            # Download form with snapshot ID requirement
-            # Download section with popup confirmation
-            st.write("**📥 Download Snapshot Data**")
-            
-            # Get record count for cost calculation
-            records_limit = selected_record.get('records_limit', 1000)
-            estimated_cost = records_limit * 0.002
-            
-            col_download1, col_download2 = st.columns(2)
-            
-            with col_download1:
-                if st.button("📥 Download Data", type="primary", help="Download snapshot data (incurs costs)"):
-                    st.session_state[f'show_download_dialog_{snapshot_id}'] = True
-            
-            with col_download2:
-                # Download format selection
-                download_format = st.selectbox(
-                    "Format",
-                    options=["json", "csv"],
-                    index=0,
-                    help="Choose the format for downloaded data",
-                    key=f"format_{snapshot_id}"
-                )
-            
-            # Show cost information
-            st.info(f"💰 **Estimated Cost**: ${estimated_cost:.4f} (${0.002:.3f} per record × {records_limit:,} records)")
-            
-            # Download confirmation dialog
-            if st.session_state.get(f'show_download_dialog_{snapshot_id}', False):
-                download_snapshot_dialog(snapshot_id, selected_record, download_format)
-        
-        # Delete button section
-        st.divider()
-        st.subheader("🗑️ Snapshot Management")
-        
-        col_delete1, col_delete2 = st.columns([1, 1])
-        
-        with col_delete1:
-            if st.button("🗑️ Delete Snapshot", type="secondary", help="Permanently delete this snapshot"):
-                st.session_state[f'show_delete_dialog_{snapshot_id}'] = True
-        
-        with col_delete2:
-            st.info("⚠️ This action cannot be undone")
-        
-        # Delete confirmation dialog
-        if st.session_state.get(f'show_delete_dialog_{snapshot_id}', False):
-            delete_snapshot_dialog(snapshot_id, selected_record)
     
     # Data Analysis (if data is available)
     if data_available:
@@ -1132,6 +1064,76 @@ def main():
                         fig_bar = px.bar(x=value_counts.index, y=value_counts.values,
                                        title=f"Top Values in {selected_cat_col}")
                         st.plotly_chart(fig_bar, use_container_width=True)
+    
+    # Actions section at the bottom
+    st.divider()
+    st.subheader("🛠️ Actions")
+    
+    # Check if data is available (support multiple formats)
+    downloads_dir = Path("data/downloads")
+    data_file = None
+    data_available = False
+    
+    # Check for different file formats
+    for ext in ['.json', '.csv', '.json.gz', '.csv.gz']:
+        potential_file = downloads_dir / f"{snapshot_id}{ext}"
+        if potential_file.exists():
+            data_file = potential_file
+            data_available = True
+            break
+    
+    if data_available:
+        st.success("✅ Data available for analysis")
+    else:
+        st.warning("⚠️ Data not downloaded yet")
+        
+        # Download form with snapshot ID requirement
+        # Download section with popup confirmation
+        st.write("**📥 Download Snapshot Data**")
+        
+        # Get record count for cost calculation
+        records_limit = selected_record.get('records_limit', 1000)
+        estimated_cost = records_limit * 0.002
+        
+        col_download1, col_download2 = st.columns(2)
+        
+        with col_download1:
+            if st.button("📥 Download Data", type="primary", help="Download snapshot data (incurs costs)"):
+                st.session_state[f'show_download_dialog_{snapshot_id}'] = True
+        
+        with col_download2:
+            # Download format selection
+            download_format = st.selectbox(
+                "Format",
+                options=["json", "csv"],
+                index=0,
+                help="Choose the format for downloaded data",
+                key=f"format_{snapshot_id}"
+            )
+        
+        # Show cost information
+        st.info(f"💰 **Estimated Cost**: ${estimated_cost:.4f} (${0.002:.3f} per record × {records_limit:,} records)")
+        
+        # Download confirmation dialog
+        if st.session_state.get(f'show_download_dialog_{snapshot_id}', False):
+            download_snapshot_dialog(snapshot_id, selected_record, download_format)
+    
+    # Delete button section
+    st.divider()
+    st.subheader("🗑️ Snapshot Management")
+    
+    col_delete1, col_delete2 = st.columns([1, 1])
+    
+    with col_delete1:
+        if st.button("🗑️ Delete Snapshot", type="secondary", help="Permanently delete this snapshot"):
+            st.session_state[f'show_delete_dialog_{snapshot_id}'] = True
+    
+    with col_delete2:
+        st.info("⚠️ This action cannot be undone")
+    
+    # Delete confirmation dialog
+    if st.session_state.get(f'show_delete_dialog_{snapshot_id}', False):
+        delete_snapshot_dialog(snapshot_id, selected_record)
     
     # Footer
     st.divider()
