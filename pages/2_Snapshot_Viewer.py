@@ -625,16 +625,18 @@ def main():
             
             # Add highlighting for selected snapshot
             if is_selected:
-                button_text = f"🎯 {button_text}"  # Add target icon for selected
                 help_text = "Currently selected snapshot"
+                type = "primary"
             else:
                 help_text = "Click to select this snapshot"
+                type = "secondary"
             
             if st.sidebar.button(
                 button_text,
                 key=f"select_{i}",
                 help=help_text,
-                width='stretch'
+                width='stretch',
+                type=type
             ):
                 st.session_state['selected_snapshot'] = record
                 # Check status when selecting a snapshot
@@ -915,6 +917,19 @@ def main():
         
         st.divider()
         
+        # Check if data is available (support multiple formats)
+        downloads_dir = Path("data/downloads")
+        data_file = None
+        data_available = False
+        
+        # Check for different file formats
+        for ext in ['.json', '.csv', '.json.gz', '.csv.gz']:
+            potential_file = downloads_dir / f"{snapshot_id}{ext}"
+            if potential_file.exists():
+                data_file = potential_file
+                data_available = True
+                break
+        
         # Local File Information (if data is available)
         if data_available:
             st.subheader("📁 Local File Information")
@@ -1079,19 +1094,6 @@ def main():
             st.write(f"**{key}:** {value}")
         
         st.divider()
-    
-    # Check if data is available (support multiple formats)
-    downloads_dir = Path("data/downloads")
-    data_file = None
-    data_available = False
-    
-    # Check for different file formats
-    for ext in ['.json', '.csv', '.json.gz', '.csv.gz']:
-        potential_file = downloads_dir / f"{snapshot_id}{ext}"
-        if potential_file.exists():
-            data_file = potential_file
-            data_available = True
-            break
     
     # Data Analysis (if data is available)
     if data_available:
