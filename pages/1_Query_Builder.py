@@ -142,9 +142,15 @@ def main():
             col1, col2, col3, col4, col5 = st.columns([2, 1, 2, 1, 0.3])
             
             with col1:
-                # Field selection with descriptions
-                field_choices = {f"{field_name} ({field.field_type.value})": field_name 
-                               for field_name, field in dataset_config.fields.items()}
+                # Field selection with detailed descriptions
+                field_choices = {}
+                for field_name, field in dataset_config.fields.items():
+                    # Create detailed field description
+                    field_desc = f"{field_name} ({field.field_type.value})"
+                    if field.description:
+                        field_desc += f" - {field.description}"
+                    field_choices[field_desc] = field_name
+                
                 field_options = list(field_choices.keys())
                 
                 # Find the current field index first
@@ -168,7 +174,7 @@ def main():
                 item['field'] = field_choices[field_key]
             
             with col2:
-                # Operator selection
+                # Operator selection with detailed help
                 operators = ['=', '!=', '<', '<=', '>', '>=', 'includes', 'not_includes', 'in', 'not_in']
                 current_operator = item.get('operator', '=')
                 try:
@@ -176,22 +182,89 @@ def main():
                 except ValueError:
                     operator_index = 0
                 
+                # Create detailed operator help text
+                operator_help = """
+**Comparison Operators:**
+
+**Equality:**
+• `=` - Exact match (e.g., name = "John")
+• `!=` - Not equal (e.g., status != "inactive")
+
+**Numeric/Date Comparisons:**
+• `<` - Less than (e.g., age < 25, date < "2023-01-01")
+• `<=` - Less than or equal (e.g., price <= 100)
+• `>` - Greater than (e.g., rating > 4.0)
+• `>=` - Greater than or equal (e.g., score >= 80)
+
+**Text/Array Operations:**
+• `includes` - Contains text (e.g., description includes "software")
+• `not_includes` - Does not contain (e.g., title not_includes "test")
+• `in` - Value in list (e.g., category in ["tech", "business"])
+• `not_in` - Value not in list (e.g., status not_in ["closed", "cancelled"])
+
+**Examples:**
+• For text: `name = "John"` or `title includes "manager"`
+• For numbers: `age > 25` or `price <= 100`
+• For categories: `status in ["active", "pending"]`
+                """
+                
                 operator = st.selectbox(
                     "Op:",
                     options=operators,
                     index=operator_index,
                     key=f"operator_{path}",
-                    help="Select the comparison operator"
+                    help=operator_help
                 )
                 item['operator'] = operator
             
             with col3:
-                # Value input
+                # Value input with field-specific help
+                selected_field_name = field_choices.get(field_options[current_index] if current_index < len(field_options) else field_options[0], "")
+                field_config = dataset_config.fields.get(selected_field_name)
+                
+                # Create field-specific help text
+                if field_config:
+                    field_type = field_config.field_type.value
+                    if field_type == 'string':
+                        value_help = f"""
+**Text Value Examples:**
+• Exact match: `"John Smith"`
+• Partial match: `"software"` (use includes operator)
+• Multiple values: `["tech", "business"]` (use in operator)
+• Case-sensitive matching
+                        """
+                    elif field_type == 'numeric':
+                        value_help = f"""
+**Numeric Value Examples:**
+• Single value: `25`, `100.50`
+• Comparisons: `> 50`, `<= 1000`
+• Ranges: Use multiple conditions
+• No quotes needed for numbers
+                        """
+                    elif field_type == 'boolean':
+                        value_help = f"""
+**Boolean Value Examples:**
+• `true` or `false`
+• `1` or `0`
+• `yes` or `no`
+• Case-insensitive
+                        """
+                    else:
+                        value_help = f"""
+**Value Examples for {field_type}:**
+• Enter the exact value to match
+• Use quotes for text: `"value"`
+• No quotes for numbers: `123`
+• For lists: `["item1", "item2"]`
+                        """
+                else:
+                    value_help = "Enter the value to compare against"
+                
                 value = st.text_input(
                     "Value:",
                     value=item.get('value', ''),
                     key=f"value_{path}",
-                    help="Enter the value to compare against"
+                    help=value_help
                 )
                 item['value'] = value
             
