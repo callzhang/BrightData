@@ -77,9 +77,31 @@ def download_snapshot_dialog(snapshot_id, selected_record, download_format):
             try:
                 metadata = brightdata.get_snapshot_metadata(snapshot_id)
                 if metadata and metadata.get('status') not in ['completed', 'ready']:
-                    st.warning(f"⚠️ Snapshot status: {metadata.get('status', 'unknown')}")
-                    st.info("💡 The snapshot may not be ready for download yet. Please wait and try again later.")
-                    return
+                    status = metadata.get('status', 'unknown')
+                    st.warning(f"⚠️ Snapshot status: {status}")
+                    
+                    # Handle failed status with detailed error message
+                    if status == 'failed':
+                        if metadata.get('warning'):
+                            st.error(f"❌ **Error:** {metadata.get('warning')}")
+                            if metadata.get('warning_code'):
+                                st.info(f"🔍 **Error Code:** {metadata.get('warning_code')}")
+                            
+                            # Provide helpful suggestions
+                            warning_code = metadata.get('warning_code', '')
+                            if warning_code == 'no_records_found':
+                                st.info("💡 **Suggestions:**")
+                                st.write("• Check if your filter field names match the dataset schema")
+                                st.write("• Verify that the values you're searching for exist in the dataset")
+                                st.write("• Try using less restrictive filter conditions")
+                                st.write("• Ensure you're querying the correct dataset")
+                        else:
+                            st.error("❌ Snapshot failed - no additional error details available")
+                        st.info("💡 **Cannot download failed snapshots.** Please fix your query and create a new snapshot.")
+                        return
+                    else:
+                        st.info("💡 The snapshot may not be ready for download yet. Please wait and try again later.")
+                        return
             except Exception as e:
                 st.warning(f"⚠️ Could not check snapshot status: {e}")
                 st.info("💡 Proceeding with download attempt...")
