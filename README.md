@@ -1,1029 +1,281 @@
-# BrightData Database System
+# BrightData Manager
 
-A comprehensive **open-source** Python library for accessing and filtering data using the BrightData database API across multiple datasets. This system provides intuitive, type-safe database queries with built-in support for Amazon Products, Amazon-Walmart Comparison, Shopee Products, and other datasets, plus a complete snapshot management system for handling long-running database operations.
+A comprehensive **open-source** Python library and web application for accessing and filtering data using the BrightData API across multiple datasets. This system provides intuitive, type-safe database queries with built-in support for Amazon Products, Amazon-Walmart Comparison, Shopee Products, and other datasets, plus a complete snapshot management system for handling long-running database operations.
 
-## 🔓 Open Source Repository
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![Streamlit](https://img.shields.io/badge/Streamlit-1.28+-red.svg)](https://streamlit.io/)
 
-This repository is open-source and focuses on providing general-purpose tools for BrightData data access. It includes:
-- Core BrightData API integration
-- Multi-dataset filtering capabilities
-- Snapshot management system
-- Streamlit UI for data visualization
-- CLI tools for data management
-- Comprehensive documentation and examples
+## 🌟 Key Features
 
-**Note**: Private and confidential content (such as specific business strategies) is maintained separately and excluded from this public repository.
+### 🎯 **Multi-Dataset Support**
+- **Amazon Products** - Comprehensive product data with pricing, reviews, and availability
+- **Amazon-Walmart Comparison** - Cross-platform competitive analysis
+- **Shopee Products** - Southeast Asian e-commerce data
+- **TikTok Products** - Social commerce insights
+- **Target Products** - US retail data
 
-## 🚀 Features
+### 🔧 **Advanced Query System**
+- **Visual Query Builder** - Intuitive web interface for creating complex filters
+- **Type-Aware Filtering** - Automatic validation and type checking
+- **Nested Logic Groups** - Support for complex AND/OR logic combinations
+- **Smart Deduplication** - Prevents duplicate API calls with order-independent matching
+- **Real-time Preview** - See your query structure before submission
 
-- **Multi-Dataset Support**: Amazon Products, Amazon-Walmart Comparison, Shopee Products
-- **Type-Aware Filtering**: Intuitive syntax with automatic validation
-- **Smart Deduplication**: Automatically detects and reuses existing snapshots with identical conditions
-- **Order-Independent Matching**: Reordered filter conditions are correctly identified as duplicates
-- **Snapshot Management**: Track, monitor, and download long-running queries
-- **Local Record Storage**: Persistent JSON storage for all filter submissions
-- **Real-time Monitoring**: Monitor processing status and handle downloads
-- **Automatic API Key Loading**: Seamless authentication from `secrets.yaml`
-- **Comprehensive Documentation**: Complete examples and API reference
-- **Jupyter Integration**: Ready-to-use notebooks with working examples
+### 📊 **Snapshot Management**
+- **Long-running Query Support** - Handle queries that take hours to complete
+- **Status Monitoring** - Real-time tracking of query progress
+- **Download Management** - Safe, cost-aware data downloads
+- **Local Storage** - Persistent records of all submissions
+- **Metadata Management** - Custom titles and descriptions for snapshots
 
-## 📦 Installation
+### 🖥️ **Modern Web Interface**
+- **Multi-page Streamlit App** - Clean, organized interface
+- **Query Builder** - Visual filter construction
+- **Snapshot Viewer** - Data analysis and visualization
+- **Settings Management** - API key and configuration
+- **Responsive Design** - Works on desktop and mobile
+
+## 🚀 Quick Start
+
+### 1. Installation
 
 ```bash
-git clone git@github.com:callzhang/BrightData.git
-cd BrightData
-pip install -r requirements.txt  # If requirements.txt exists
+# Clone the repository
+git clone https://github.com/yourusername/brightdata-manager.git
+cd brightdata-manager
+
+# Install dependencies
+pip install -r requirements.txt
+pip install -r requirements_ui.txt
 ```
 
-## ⚡ Quick Start
+### 2. Configuration
 
-```python
-from util import BrightDataFilter
+```bash
+# Copy the example configuration
+cp secrets.example.yaml secrets.yaml
 
-# Method 1: Using dataset name (recommended) - API key loaded automatically from secrets.yaml
-amazon_products = BrightDataFilter("amazon_products")
-
-# Method 2: Using convenience class method - API key loaded automatically
-amazon_products = BrightDataFilter.amazon_products()
-
-# Method 3: Using dataset ID (still supported)
-amazon_products = BrightDataFilter("gd_l7q7dkf244hwjntr0")
-
-# Method 4: Custom API key (optional)
-amazon_products = BrightDataFilter("amazon_products", api_key="your_custom_key")
-
-# Create a simple database query using the dataset's filter fields
-high_rated_products = amazon_products.filter.rating >= 4.5
-
-# Execute the database query (includes automatic deduplication)
-result = amazon_products.search_data(high_rated_products, records_limit=1000)
-print(f"Found products with snapshot ID: {result['snapshot_id']}")
-print(f"Reused existing snapshot: {result.get('existing', False)}")
+# Edit secrets.yaml with your BrightData API key
+# You can get an API key from https://brightdata.com/
 ```
 
-## ⚙️ Configuration
-
-### 1. API Key Setup (Automatic Loading)
-The system automatically loads your API key from `secrets.yaml`. Create this file in your project root:
-
-```yaml
-brightdata:
-  api_key: "your_brightdata_api_key_here"
-```
-
-### 2. Dataset Access
-The system supports multiple datasets with user-friendly names:
-
-```python
-from util import BrightDataFilter, get_dataset_id, list_dataset_names
-
-# List all available dataset names
-print(list_dataset_names())
-# Output: {'amazon_products': 'gd_l7q7dkf244hwjntr0', 'amazon': 'gd_l7q7dkf244hwjntr0', ...}
-
-# Access datasets by name (recommended) - API key loaded automatically
-amazon_products = BrightDataFilter("amazon_products")
-amazon_walmart = BrightDataFilter("amazon_walmart") 
-shopee = BrightDataFilter("shopee")
-
-# Or use convenience methods - API key loaded automatically
-amazon_products = BrightDataFilter.amazon_products()
-amazon_walmart = BrightDataFilter.amazon_walmart()
-shopee = BrightDataFilter.shopee()
-
-# Each dataset provides its own filter fields
-amazon_query = amazon_products.filter.rating >= 4.5
-walmart_query = amazon_walmart.filter.price_difference > 10
-shopee_query = shopee.filter.rating >= 4.0
-```
-
-**Available Dataset Names:**
-- **Amazon Products**: `"amazon_products"`, `"amazon_product"`, `"amazon"`
-- **Amazon-Walmart Comparison**: `"amazon_walmart"`, `"amazon_walmart_comparison"`, `"amazon_walmart_dataset"`
-- **Shopee Products**: `"shopee_products"`, `"shopee"`, `"shopee_product"`
-
-### 3. Storage Configuration
-Local snapshot records are stored in `snapshot_records/` by default. You can customize this:
-
-```python
-# Custom storage directory
-amazon_products = BrightDataFilter("amazon_products", "my_snapshots")
-```
-
-## 📋 Table of Contents
-
-- [Quick Start](#-quick-start)
-- [Configuration](#-configuration)
-- [Multi-Dataset Support](#multi-dataset-support)
-- [Filter Syntax Overview](#filter-syntax-overview)
-- [Type-Aware Filter Fields](#type-aware-filter-fields)
-- [Operators](#operators)
-- [Logical Operations](#logical-operations)
-- [Examples](#examples)
-- [Snapshot Management](#snapshot-management)
-- [API Reference](#api-reference)
-- [Contributing](#-contributing)
-
-## Quick Start
-
-```python
-from util import BrightDataFilter
-
-# Initialize BrightData database connections for different datasets
-# API keys are loaded automatically from secrets.yaml
-
-# Amazon Products dataset
-amazon_products = BrightDataFilter("amazon_products")
-amazon_query = amazon_products.filter.rating >= 4.5
-
-# Amazon-Walmart Comparison dataset  
-amazon_walmart = BrightDataFilter("amazon_walmart")
-comparison_query = amazon_walmart.filter.price_difference > 10
-
-# Shopee Products dataset
-shopee = BrightDataFilter("shopee")
-shopee_query = shopee.filter.rating >= 4.0
-
-# Execute database queries
-amazon_result = amazon_products.search_data(amazon_query, records_limit=1000)
-comparison_result = amazon_walmart.search_data(comparison_query, records_limit=1000)
-shopee_result = shopee.search_data(shopee_query, records_limit=1000)
-```
-
-## Multi-Dataset Support
-
-The system supports multiple datasets with dataset-specific field definitions and validation:
-
-### Available Datasets
-
-```python
-from util import BrightDataFilter
-
-# List all available datasets
-datasets = BrightDataFilter.list_available_datasets()
-for dataset in datasets:
-    print(f"• {dataset['name']} ({dataset['dataset_id']})")
-    print(f"  {dataset['description']}")
-    print(f"  Fields: {dataset['field_count']}")
-```
-
-### Dataset-Specific Fields
-
-```python
-from util import AMAZON_FIELDS as AF, AMAZON_WALMART_FIELDS as AW, SHOPEE_FIELDS as SF
-
-# Amazon Products dataset fields
-amazon_filter = BrightDataFilter(api_key, "gd_l7q7dkf244hwjntr0")
-amazon_query = (
-    AF.rating >= 4.5 &
-    AF.categories.includes("Electronics") &
-    AF.asin.is_not_null()  # Amazon-specific field
-)
-
-# Amazon-Walmart Comparison dataset fields
-aw_filter = BrightDataFilter(api_key, "gd_m4l6s4mn2g2rkx9lia")
-aw_query = (
-    AW.platform == "Amazon" &
-    AW.price_difference > 0 &
-    AW.availability_match.is_true()  # Cross-platform field
-)
-
-# Shopee Products dataset fields
-shopee_filter = BrightDataFilter(api_key, "gd_lk122xxgf86xf97py")
-shopee_query = (
-    SF.rating >= 4.5 &
-    SF.units_sold > 1000 &
-    SF.country == "Singapore"  # Shopee-specific field
-)
-```
-
-### Field Validation
-
-The system automatically validates fields and operators for each dataset:
-
-```python
-try:
-    # This works - ASIN exists in Amazon dataset
-    filter = amazon_filter.create_filter("asin", "=", "B123456789")
-except ValueError as e:
-    print(f"Error: {e}")
-
-try:
-    # This fails - platform doesn't exist in Amazon dataset
-    filter = amazon_filter.create_filter("platform", "=", "Amazon")
-except ValueError as e:
-    print(f"Error: {e}")  # Field 'platform' not found in dataset 'gd_l7q7dkf244hwjntr0'
-```
-
-### Dataset Information
-
-```python
-# Get information about the current dataset
-info = amazon_filter.get_dataset_info()
-print(f"Dataset: {info['name']}")
-print(f"Available fields: {len(info['available_fields'])}")
-
-# Get field reference for current dataset
-field_ref = amazon_filter.get_field_reference()
-for field_name, description in field_ref.items():
-    print(f"{field_name}: {description}")
-```
-
-## Filter Syntax Overview
-
-The filter system provides multiple ways to create filters, from simple comparisons to complex nested conditions:
-
-### 1. Type-Aware Field Syntax (Recommended)
-```python
-# Numerical fields support comparison operators
-RATING >= 4.5
-PRICE < 100.0
-REVIEWS_COUNT.in_range(50, 500)
-
-# String fields support equality and contains
-TITLE.contains("iPhone")
-BRAND == "Apple"
-DEPARTMENT.in_list(["Electronics", "Computers"])
-
-# Boolean fields have specific methods
-IS_AVAILABLE.is_true()
-IS_AVAILABLE == True
-
-# Array fields support inclusion checks
-CATEGORIES.includes("Electronics")
-CATEGORIES.not_includes("Books")
-```
-
-### 2. Generic Filter Creation
-```python
-# Using the filter method
-filter_tool.filter("rating", ">=", "4.5")
-filter_tool.filter("title", "includes", "iPhone")
-filter_tool.filter("categories", "array_includes", "Electronics")
-```
-
-### 3. Direct FilterCondition Creation
-```python
-from util import FilterCondition, FilterOperator
-
-condition = FilterCondition("rating", FilterOperator.GREATER_THAN_EQUAL, "4.5")
-```
-
-## Type-Aware Filter Fields
-
-The system provides type-aware field classes that offer intuitive methods for each data type:
-
-### Numerical Fields
-```python
-from util import RATING, PRICE, REVIEWS_COUNT, BS_RANK
-
-# Comparison operators
-RATING >= 4.5
-PRICE < 100.0
-REVIEWS_COUNT > 100
-
-# Range filtering
-PRICE.in_range(50, 200)  # 50 <= price <= 200
-RATING.in_range(4.0, 5.0)
-
-# Available numerical fields:
-# RATING, REVIEWS_COUNT, INITIAL_PRICE, FINAL_PRICE, DISCOUNT
-# NUMBER_OF_SELLERS, BS_RANK, ROOT_BS_RANK, ITEM_WEIGHT
-```
-
-### String Fields
-```python
-from util import AMAZON_FIELDS as AF
-
-# Equality
-AF.brand == "Apple"
-AF.department == "Electronics"
-
-# Contains/Not contains
-AF.title.contains("iPhone")
-AF.description.not_contains("refurbished")
-
-# Includes (supports single string or array of strings)
-AF.availability.includes("FREE")  # Single string
-AF.availability.includes(["only", "within", "limited"])  # Array of strings
-
-# List operations
-AF.brand.in_list(["Apple", "Samsung", "Sony"])
-AF.department.not_in_list(["Books", "Movies"])
-
-# Available string fields:
-# TITLE, ASIN, BRAND, DESCRIPTION, CURRENCY, AVAILABILITY
-# SELLER_NAME, BUYBOX_SELLER, DEPARTMENT, PRODUCT_DIMENSIONS
-# MODEL_NUMBER, MANUFACTURER, UPC
-```
-
-### Boolean Fields
-```python
-from util import IS_AVAILABLE
-
-# Boolean methods
-IS_AVAILABLE.is_true()
-IS_AVAILABLE.is_false()
-
-# Equality (converts to string)
-IS_AVAILABLE == True   # becomes "true"
-IS_AVAILABLE == False  # becomes "false"
-```
-
-### Array Fields
-```python
-from util import CATEGORIES, DELIVERY
-
-# Single value inclusion
-CATEGORIES.includes("Electronics")
-DELIVERY.not_includes("Prime")
-
-# Multiple value inclusion (creates OR condition)
-CATEGORIES.includes(["Electronics", "Computers"])
-
-# Available array fields:
-# CATEGORIES, DELIVERY
-```
-
-## Operators
-
-The system supports all Bright Data API operators:
-
-| Operator | String | Description | Field Types |
-|----------|--------|-------------|-------------|
-| `=` | `"="` | Equal to | Any |
-| `!=` | `"!="` | Not equal to | Any |
-| `<` | `"<"` | Less than | Number, Date |
-| `<=` | `"<="` | Less than or equal | Number, Date |
-| `>` | `">"` | Greater than | Number, Date |
-| `>=` | `">="` | Greater than or equal | Number, Date |
-| `in` | `"in"` | Value in list | Any |
-| `not_in` | `"not_in"` | Value not in list | Any |
-| `includes` | `"includes"` | String contains | String |
-| `not_includes` | `"not_includes"` | String does not contain | String |
-| `array_includes` | `"array_includes"` | Array contains value | Array |
-| `not_array_includes` | `"not_array_includes"` | Array does not contain value | Array |
-| `is_null` | `"is_null"` | Field is null | Any |
-| `is_not_null` | `"is_not_null"` | Field is not null | Any |
-
-## Logical Operations
-
-Combine filters using logical operators:
-
-### AND Operations
-```python
-# Using & operator
-high_rated_affordable = (RATING >= 4.5) & (PRICE < 100)
-
-# Using + operator (alternative)
-high_rated_affordable = (RATING >= 4.5) + (PRICE < 100)
-
-# Multiple conditions
-complex_filter = (RATING >= 4.0) & (PRICE < 200) & (CATEGORIES.includes("Electronics"))
-```
-
-### OR Operations
-```python
-# Using | operator
-apple_or_samsung = (BRAND == "Apple") | (BRAND == "Samsung")
-
-# Multiple OR conditions
-electronics_or_computers = (CATEGORIES.includes("Electronics")) | (CATEGORIES.includes("Computers"))
-```
-
-### Complex Nested Logic
-```python
-# Complex nested conditions
-strategy_filter = (
-    (RATING >= 4.0) & 
-    (PRICE < 100) & 
-    (
-        (CATEGORIES.includes("Electronics")) | 
-        (CATEGORIES.includes("Home & Garden"))
-    ) &
-    (IS_AVAILABLE.is_true())
-)
-```
-
-
-## Configuration
-
-### Secrets Management
-```python
-from util import get_brightdata_api_key, validate_required_secrets
-
-# Validate configuration
-validate_required_secrets()
-
-# Get API key
-api_key = get_brightdata_api_key()
-```
-
-### Configuration File Structure
-```yaml
-# secrets.yaml
-brightdata:
-  api_key: "your_bright_data_api_key_here"
-  dataset_id: "gd_l7q7dkf244hwjntr0"
-  base_url: "https://api.brightdata.com/datasets"
-
-environment:
-  debug: false
-  log_level: "INFO"
-  max_retries: 3
-  timeout: 30
-```
-
-## Examples
-
-### Example 1: Find High-Quality Electronics Under $100 (Amazon Products)
-```python
-from util import BrightDataFilter, AMAZON_FIELDS as AF, get_brightdata_api_key
-
-api_key = get_brightdata_api_key()
-amazon_filter = BrightDataFilter(api_key, "gd_l7q7dkf244hwjntr0")
-
-# Create the filter using Amazon-specific fields
-electronics_filter = (
-    AF.rating >= 4.5 &
-    AF.final_price < 100 &
-    AF.categories.includes("Electronics") &
-    AF.is_available.is_true()
-)
-
-# Execute search
-result = amazon_filter.search_data(electronics_filter, records_limit=500)
-print(f"Found products: {result['snapshot_id']}")
-```
-
-### Example 2: Cross-Platform Price Analysis (Amazon-Walmart Comparison)
-```python
-from util import BrightDataFilter, AMAZON_WALMART_FIELDS as AW, get_brightdata_api_key
-
-api_key = get_brightdata_api_key()
-aw_filter = BrightDataFilter(api_key, "gd_m4l6s4mn2g2rkx9lia")
-
-# Find products where Amazon is significantly more expensive
-amazon_expensive = (
-    AW.platform == "Amazon" &
-    AW.price_difference > 0 &
-    AW.price_difference_percentage > 20 &
-    AW.availability_match.is_true() &
-    AW.rating >= 4.0
-)
-
-result = aw_filter.search_data(amazon_expensive, records_limit=1000)
-print(f"Found Amazon-expensive products: {result['snapshot_id']}")
-```
-
-### Example 3: Long Tail Opportunities (Amazon Products)
-```python
-from util import BrightDataFilter, AMAZON_FIELDS as AF, get_brightdata_api_key
-
-api_key = get_brightdata_api_key()
-amazon_filter = BrightDataFilter(api_key, "gd_l7q7dkf244hwjntr0")
-
-# Find long tail opportunities (good ratings, moderate competition)
-long_tail_filter = (
-    AF.rating >= 4.0 &
-    AF.reviews_count >= 50 &
-    AF.reviews_count < 500 &
-    AF.final_price < 100 &
-    AF.is_available.is_true() &
-    AF.currency == "USD"
-)
-
-result = amazon_filter.search_data(long_tail_filter, records_limit=1000)
-```
-
-### Example 4: Complex Multi-Category Analysis (Amazon Products)
-```python
-from util import BrightDataFilter, AMAZON_FIELDS as AF, get_brightdata_api_key
-
-api_key = get_brightdata_api_key()
-amazon_filter = BrightDataFilter(api_key, "gd_l7q7dkf244hwjntr0")
-
-# Complex filter for multiple categories
-multi_category_filter = (
-    AF.rating >= 4.0 &
-    AF.final_price.in_range(20, 150) &
-    (
-        AF.categories.includes("Electronics") |
-        AF.categories.includes("Home & Garden") |
-        AF.categories.includes("Sports & Outdoors")
-    ) &
-    AF.brand.not_in_list(["Generic", "Unbranded"])
-)
-
-result = amazon_filter.search_data(multi_category_filter, records_limit=2000)
-```
-
-### Example 5: Export and Import Filter Configurations
-```python
-from util import BrightDataFilter, AMAZON_FIELDS as AF, export_filter_to_json, load_filter_from_json
-
-# Create a complex filter
-my_filter = (AF.rating >= 4.5) & (AF.final_price < 100)
-
-# Export to JSON
-export_filter_to_json(my_filter, "my_filter_config.json")
-
-# Load from JSON
-filter_config = load_filter_from_json("my_filter_config.json")
-print(filter_config)
-```
-
-### Example 6: Shopee Market Analysis
-```python
-from util import BrightDataFilter, SHOPEE_FIELDS as SF, get_brightdata_api_key
-
-api_key = get_brightdata_api_key()
-shopee_filter = BrightDataFilter(api_key, "gd_lk122xxgf86xf97py")
-
-# Find trending products in Singapore
-trending_singapore = (
-    (SF.rating >= 4.0) &
-    (SF.units_sold > 500) &
-    (SF.favorites_count > 100) &
-    (SF.country == "Singapore") &
-    SF.is_available.is_true()
-)
-
-# Find best-selling electronics
-best_electronics = (
-    (SF.category == "Electronics") &
-    (SF.units_sold > 1000) &
-    (SF.rating >= 4.5) &
-    (SF.final_price < 200)
-)
-
-result = shopee_filter.search_data(trending_singapore, records_limit=1000)
-print(f"Found trending products: {result['snapshot_id']}")
-```
-
-### Example 7: Dataset Discovery and Information
-```python
-from util import BrightDataFilter, get_brightdata_api_key
-
-# List all available datasets
-datasets = BrightDataFilter.list_available_datasets()
-print("Available datasets:")
-for dataset in datasets:
-    print(f"• {dataset['name']} ({dataset['dataset_id']})")
-    print(f"  {dataset['description']}")
-    print(f"  Fields: {dataset['field_count']}")
-
-# Get detailed information about a specific dataset
-api_key = get_brightdata_api_key()
-amazon_filter = BrightDataFilter(api_key, "gd_l7q7dkf244hwjntr0")
-
-info = amazon_filter.get_dataset_info()
-print(f"\nCurrent dataset: {info['name']}")
-print(f"Available fields: {len(info['available_fields'])}")
-
-# Get field reference
-field_ref = amazon_filter.get_field_reference()
-print("\nField reference:")
-for field_name, description in list(field_ref.items())[:5]:  # Show first 5
-    print(f"  {field_name}: {description}")
-```
-
-## API Reference
-
-### Core Classes
-
-#### `BrightDataFilter`
-Main class for creating and executing data filters using the BrightData API.
-
-```python
-class BrightDataFilter:
-    def __init__(self, api_key: str, dataset_id: str = "gd_l7q7dkf244hwjntr0")
-    def create_filter(self, name: str, operator: FilterOperator, value: Any = None) -> FilterCondition
-    def filter(self, field: str, op: str, value: Any = None) -> FilterCondition
-    def create_filter_group(self, operator: LogicalOperator, filters: List) -> FilterGroup
-    def search_data(self, filter_obj: Union[FilterCondition, FilterGroup], records_limit: int = 1000) -> Dict[str, Any]
-    def get_dataset_info(self) -> Dict[str, Any]
-    def get_field_reference(self) -> Dict[str, str]
-    @staticmethod
-    def list_available_datasets() -> List[Dict[str, Any]]
-```
-
-#### `DatasetFilterFields`
-Dataset-aware filter fields factory for type-safe field access.
-
-```python
-class DatasetFilterFields:
-    def __init__(self, dataset_id: str)
-    def __getattr__(self, name: str) -> FilterField
-    def get_field(self, field_name: str) -> Optional[FilterField]
-    def list_fields(self) -> Dict[str, FilterField]
-    def get_field_names(self) -> list
-```
-
-#### `FilterCondition`
-Represents a single filter condition.
-
-```python
-@dataclass
-class FilterCondition:
-    name: str
-    operator: FilterOperator
-    value: Any = None
-    
-    def to_dict(self) -> Dict[str, Any]
-    def __and__(self, other) -> FilterGroup  # AND operation
-    def __or__(self, other) -> FilterGroup   # OR operation
-    def __add__(self, other) -> FilterGroup  # Alternative AND syntax
-```
-
-#### `FilterGroup`
-Represents a group of filters with logical operators.
-
-```python
-@dataclass
-class FilterGroup:
-    operator: LogicalOperator
-    filters: List[Union[FilterGroup, FilterCondition]]
-    
-    def to_dict(self) -> Dict[str, Any]
-    def pretty_print(self, indent: int = 0) -> str
-    def __and__(self, other) -> FilterGroup  # AND operation
-    def __or__(self, other) -> FilterGroup   # OR operation
-```
-
-### Type-Aware Field Classes
-
-#### `NumericalFilterField`
-```python
-class NumericalFilterField:
-    def __gt__(self, value) -> FilterCondition      # >
-    def __ge__(self, value) -> FilterCondition      # >=
-    def __lt__(self, value) -> FilterCondition      # <
-    def __le__(self, value) -> FilterCondition      # <=
-    def __eq__(self, value) -> FilterCondition      # ==
-    def __ne__(self, value) -> FilterCondition      # !=
-    def in_range(self, min_val, max_val) -> FilterGroup
-```
-
-#### `StringFilterField`
-```python
-class StringFilterField:
-    def contains(self, value: str) -> FilterCondition
-    def not_contains(self, value: str) -> FilterCondition
-    def __eq__(self, value: str) -> FilterCondition
-    def __ne__(self, value: str) -> FilterCondition
-    def in_list(self, values: list) -> FilterCondition
-    def not_in_list(self, values: list) -> FilterCondition
-```
-
-#### `BooleanFilterField`
-```python
-class BooleanFilterField:
-    def is_true(self) -> FilterCondition
-    def is_false(self) -> FilterCondition
-    def __eq__(self, value: bool) -> FilterCondition
-    def __ne__(self, value: bool) -> FilterCondition
-```
-
-#### `ArrayFilterField`
-```python
-class ArrayFilterField:
-    def includes(self, value: Union[str, list]) -> FilterCondition
-    def not_includes(self, value: Union[str, list]) -> FilterCondition
-    def __eq__(self, value: str) -> FilterCondition
-    def __ne__(self, value: str) -> FilterCondition
-```
-
-### Utility Functions
-
-```python
-def export_filter_to_json(filter_obj: Union[FilterCondition, FilterGroup], filename: str = "filter_config.json") -> None
-def load_filter_from_json(filename: str) -> Dict[str, Any]
-def analyze_filter_results(snapshot_id: str, api_key: str) -> Dict[str, Any]
-```
-
-### Configuration Functions
-
-```python
-def get_brightdata_api_key() -> str
-def validate_required_secrets() -> None
-def get_secret(key_path: str, default: Any = None) -> Any
-def get_config(key_path: str, default: Any = None) -> Any
-```
-
-### Multi-Dataset Functions
-
-```python
-def list_available_datasets() -> List[DatasetSchema]
-def get_dataset_schema(dataset_id: str) -> Optional[DatasetSchema]
-def get_field_reference(dataset_id: str) -> Dict[str, str]
-def validate_field_operator(dataset_id: str, field_name: str, operator: str) -> bool
-```
-
-### Pre-configured Dataset Fields
-
-```python
-# Amazon Products Dataset (gd_l7q7dkf244hwjntr0)
-AMAZON_FIELDS = DatasetFilterFields("gd_l7q7dkf244hwjntr0")
-
-# Amazon-Walmart Comparison Dataset (gd_m4l6s4mn2g2rkx9lia)
-AMAZON_WALMART_FIELDS = DatasetFilterFields("gd_m4l6s4mn2g2rkx9lia")
-
-# Shopee Products Dataset (gd_lk122xxgf86xf97py)
-SHOPEE_FIELDS = DatasetFilterFields("gd_lk122xxgf86xf97py")
-```
-
-## Best Practices
-
-### 1. Use Dataset-Specific Fields with Aliases
-Prefer dataset-specific fields with aliases for cleaner, more readable code:
-```python
-# Good - Use aliases for cleaner code
-from util import AMAZON_FIELDS as AF, AMAZON_WALMART_FIELDS as AW
-
-AF.rating >= 4.5
-AW.platform == "Amazon"
-
-# Also good - Full names for clarity
-AMAZON_FIELDS.rating >= 4.5
-AMAZON_WALMART_FIELDS.platform == "Amazon"
-
-# Avoid
-filter_tool.filter("rating", ">=", "4.5")  # No dataset validation
-```
-
-### 2. Combine Filters Logically
-Use parentheses to ensure correct operator precedence:
-```python
-# Good - With aliases
-from util import AMAZON_FIELDS as AF
-filter = (AF.rating >= 4.0) & (AF.final_price < 100) & (AF.categories.includes("Electronics"))
-
-# Also good - Full names
-filter = (AMAZON_FIELDS.rating >= 4.0) & (AMAZON_FIELDS.final_price < 100) & (AMAZON_FIELDS.categories.includes("Electronics"))
-
-# Avoid
-filter = AF.rating >= 4.0 & AF.final_price < 100 & AF.categories.includes("Electronics")
-```
-
-### 3. Validate Dataset Compatibility
-Always ensure you're using the correct dataset and fields:
-```python
-# Good - Check available datasets first
-datasets = BrightDataFilter.list_available_datasets()
-for dataset in datasets:
-    print(f"Available: {dataset['name']} ({dataset['dataset_id']})")
-
-# Good - Use appropriate dataset-specific fields with aliases
-from util import AMAZON_FIELDS as AF, AMAZON_WALMART_FIELDS as AW
-brightdata = BrightDataFilter(api_key, "gd_l7q7dkf244hwjntr0")
-amazon_query = AF.rating >= 4.0  # Uses Amazon-specific fields
-
-# Avoid - Mixing datasets
-brightdata = BrightDataFilter(api_key, "gd_l7q7dkf244hwjntr0")
-amazon_query = AW.platform == "Amazon"  # Wrong dataset fields
-```
-
-### 4. Export Complex Filters
-Save complex filter configurations for reuse:
-```python
-from util import AMAZON_FIELDS as AF, export_filter_to_json
-complex_filter = (AF.rating >= 4.5) & (AF.final_price < 100) & (AF.categories.includes("Electronics"))
-export_filter_to_json(complex_filter, "electronics_high_quality.json")
-```
-
-### 5. Validate Configuration
-Always validate your configuration before running filters:
-```python
-validate_required_secrets()
-api_key = get_brightdata_api_key()
-```
-
-## Error Handling
-
-The system provides clear error messages for common issues:
-
-```python
-# Invalid operator
-try:
-    filter_tool.filter("rating", "invalid_op", "4.5")
-except ValueError as e:
-    print(f"Error: {e}")  # "Unknown operator: invalid_op. Available: ['=', '!=', '<', ...]"
-
-# Missing API key
-try:
-    get_brightdata_api_key()
-except ValueError as e:
-    print(f"Error: {e}")  # "Bright Data API key not found. Please set it in secrets.yaml"
-```
-
-## Performance Tips
-
-1. **Limit Results**: Always set appropriate `records_limit` to avoid large result sets
-2. **Use Specific Filters**: More specific filters return fewer results and are faster
-3. **Cache Results**: Save snapshot IDs for later analysis instead of re-running filters
-4. **Batch Operations**: Use filter groups to combine multiple conditions efficiently
-
-## Troubleshooting
-
-### Common Issues
-
-1. **API Key Not Found**: Ensure `secrets.yaml` exists and contains valid API key
-2. **Invalid Operators**: Check operator spelling and field type compatibility
-3. **401 Unauthorized Error**: Fixed in latest version - API key is now automatically loaded from `secrets.yaml`
-4. **Deduplication Not Working**: Fixed in latest version - now properly handles reordered filter conditions
-5. **Large Result Sets**: Use more specific filters or lower `records_limit`
-6. **Timeout Errors**: Reduce filter complexity or increase timeout in configuration
-
-### Debug Mode
-
-Enable debug mode for detailed logging:
-```yaml
-# secrets.yaml
-environment:
-  debug: true
-  log_level: "DEBUG"
-```
-
-## Smart Deduplication System
-
-The BrightData Database System includes an intelligent deduplication feature that automatically detects and reuses existing snapshots with identical filter conditions, saving both time and money.
-
-### How It Works
-
-When you submit a filter, the system:
-
-1. **Checks for Existing Snapshots**: Searches through local snapshot records for identical conditions
-2. **Order-Independent Comparison**: Correctly identifies reordered filter conditions as duplicates
-3. **Reuses Existing Results**: Returns the existing snapshot ID instead of creating a new one
-4. **Saves Costs**: Avoids duplicate API charges for identical queries
-
-### Example
-
-```python
-from util import BrightDataFilter
-
-# Create dataset connection
-amazon_products = BrightDataFilter("amazon_products")
-AF = amazon_products.filter
-
-# Original filter
-original_filter = (
-    (AF.rating >= 4.0) &
-    (AF.reviews_count >= 50) &
-    (AF.currency == "USD")
-)
-
-# Submit original filter
-result1 = amazon_products.search_data(original_filter, records_limit=1000)
-print(f"New snapshot: {result1['snapshot_id']}")  # Creates new snapshot
-
-# Reordered filter (same logic, different order)
-reordered_filter = (
-    (AF.currency == "USD") &
-    (AF.rating >= 4.0) &
-    (AF.reviews_count >= 50)
-)
-
-# Submit reordered filter
-result2 = amazon_products.search_data(reordered_filter, records_limit=1000)
-print(f"Existing snapshot: {result2['snapshot_id']}")  # Reuses existing snapshot
-print(f"Cost saved: {result2.get('existing', False)}")  # True
-```
-
-### Benefits
-
-- **💰 Cost Savings**: No duplicate charges for identical queries
-- **⚡ Faster Results**: Immediate return of existing snapshot IDs
-- **🔄 Order Independence**: Works regardless of filter condition order
-- **🧠 Smart Matching**: Handles complex nested AND/OR logic correctly
-- **📊 Transparent**: Automatically works without user intervention
-
-### Technical Details
-
-The deduplication system uses:
-- **Local JSON Storage**: Maintains records of all submitted filters
-- **Deep Comparison**: Recursively compares filter structures
-- **Sorting Algorithm**: Ensures order-independent matching
-- **Metadata Tracking**: Stores submission time, status, and costs
-
-## Web UI - Snapshot Viewer
-
-For an intuitive, point-and-click interface to view and analyze your snapshots:
+### 3. Launch the Application
 
 ```bash
 # Launch the web interface
 python launch_viewer.py
+
+# Or run directly with Streamlit
+streamlit run app.py
 ```
 
-The **Snapshot Viewer** provides:
-- 📊 **Interactive Dashboard**: View all snapshots with status tracking
-- 📈 **Data Analysis**: Automatic statistical summaries and visualizations  
-- 🔍 **Data Exploration**: Browse data with professional charts and tables
-- 📱 **Mobile Friendly**: Works on any device with a web browser
-- 🎨 **Visual Status**: Color-coded status badges and metrics
+### 4. Basic Usage
 
-## Snapshot Management
+```python
+from util import BrightDataFilter
 
-After submitting filters, use the **Snapshot Manager** to track progress and handle downloads:
+# Initialize with dataset name (recommended)
+amazon_products = BrightDataFilter("amazon_products")
+
+# Create a simple filter
+F = amazon_products.filter
+query = (F.rating >= 4.5) & (F.reviews_count > 100)
+
+# Submit the query
+snapshot_id = amazon_products.search_data(
+    filter_obj=query,
+    records_limit=1000,
+    description="High-rated products with many reviews"
+)
+
+print(f"Query submitted! Snapshot ID: {snapshot_id}")
+```
+
+## 🏗️ Architecture
+
+### System Components
+
+```mermaid
+graph TB
+    subgraph "User Interface"
+        UI[Streamlit Web App]
+        CLI[Command Line Interface]
+        JUPYTER[Jupyter Notebooks]
+    end
+    
+    subgraph "Core System"
+        BDF[BrightDataFilter]
+        FC[Filter Criteria]
+        DR[Dataset Registry]
+        CM[Config Manager]
+    end
+    
+    subgraph "Data Storage"
+        SR[Snapshot Records]
+        DL[Downloads]
+        SEC[Secrets]
+    end
+    
+    subgraph "External APIs"
+        BDA[BrightData API]
+    end
+    
+    UI --> BDF
+    CLI --> BDF
+    JUPYTER --> BDF
+    BDF --> FC
+    BDF --> DR
+    BDF --> CM
+    BDF --> SR
+    BDF --> DL
+    CM --> SEC
+    BDF --> BDA
+```
+
+## 📖 Documentation
+
+### Core Concepts
+
+- **[Architecture Overview](docs/architecture.md)** - System design and components
+- **[Technical Specifications](docs/technical.md)** - Detailed technical documentation
+- **[API Reference](docs/api_reference.md)** - Complete API documentation
+- **[Examples](examples/)** - Usage examples and tutorials
+
+### User Guides
+
+- **[Getting Started](docs/getting_started.md)** - Step-by-step setup guide
+- **[Query Builder Guide](docs/query_builder.md)** - How to use the visual query builder
+- **[Snapshot Management](docs/snapshot_management.md)** - Working with snapshots
+- **[Configuration](docs/configuration.md)** - System configuration options
+
+## 🎯 Use Cases
+
+### E-commerce Research
+- **Product Analysis** - Find trending products and market opportunities
+- **Competitive Intelligence** - Compare prices and availability across platforms
+- **Market Research** - Analyze customer reviews and ratings
+- **Inventory Planning** - Identify stockout opportunities
+
+### Data Science
+- **Machine Learning** - Train models on product and review data
+- **Statistical Analysis** - Perform market research and trend analysis
+- **Data Visualization** - Create charts and dashboards
+- **Research Projects** - Academic and commercial research
+
+### Business Intelligence
+- **Market Analysis** - Understand market trends and opportunities
+- **Competitor Analysis** - Track competitor pricing and products
+- **Customer Insights** - Analyze customer behavior and preferences
+- **Strategic Planning** - Make data-driven business decisions
+
+## 🔧 Advanced Usage
+
+### Complex Queries
+
+```python
+from util import BrightDataFilter
+
+# Initialize filter
+amazon_products = BrightDataFilter("amazon_products")
+F = amazon_products.filter
+
+# Complex nested query
+query = (
+    (F.rating >= 4.0) & 
+    (F.reviews_count > 50) &
+    (F.price.between(10, 100)) &
+    (F.category.in_list(["Electronics", "Books"]))
+)
+
+# Submit with custom metadata
+snapshot_id = amazon_products.search_data(
+    filter_obj=query,
+    records_limit=5000,
+    description="High-quality electronics and books under $100",
+    title="Premium Products Analysis"
+)
+```
+
+### Batch Processing
+
+```python
+# Process multiple queries
+queries = [
+    {"filter": F.rating >= 4.5, "limit": 1000, "desc": "Top rated products"},
+    {"filter": F.price < 50, "limit": 2000, "desc": "Budget products"},
+    {"filter": F.reviews_count > 1000, "limit": 500, "desc": "Popular products"}
+]
+
+results = []
+for query in queries:
+    snapshot_id = amazon_products.search_data(
+        filter_obj=query["filter"],
+        records_limit=query["limit"],
+        description=query["desc"]
+    )
+    results.append(snapshot_id)
+```
+
+## 🧪 Testing
 
 ```bash
-# List all snapshot records
-python snapshot_manager.py --list
+# Run all tests
+python -m pytest tests/
 
-# Check status of all snapshots  
-python snapshot_manager.py --status
+# Run with coverage
+python -m pytest tests/ --cov=util
 
-# Download ready snapshots (incurs fees)
-python snapshot_manager.py --download
-
-# View downloaded data
-python snapshot_manager.py --view <snapshot_id>
-
-# Monitor processing snapshots
-python snapshot_manager.py --monitor
+# Run specific test file
+python -m pytest tests/test_brightdata.py -v
 ```
-
-The snapshot manager provides:
-- **Local Record Storage**: All database query criteria and metadata saved as JSON files
-- **Status Monitoring**: Real-time status checking from BrightData API
-- **Download Management**: Handle ready snapshots and view downloaded data
-- **Progress Tracking**: Monitor long-running database operations (30+ minutes)
-- **Cost Tracking**: Monitor API costs per snapshot
-
-See [SNAPSHOT_MANAGER_README.md](SNAPSHOT_MANAGER_README.md) for complete documentation.
-
-## Conclusion
-
-This comprehensive database system provides powerful, intuitive tools for data analysis using the BrightData database API across multiple datasets. The multi-dataset architecture with type-aware syntax makes complex database queries readable and maintainable, enabling efficient analysis for various market research and product strategy applications. With built-in support for Amazon Products, Amazon-Walmart Comparison, Shopee Products, and extensible architecture for additional datasets, the system scales to meet diverse analytical needs across global e-commerce platforms.
-
-The integrated snapshot management system ensures you never lose track of submitted database queries and can efficiently handle the long processing times and download management required for large-scale data analysis.
 
 ## 🤝 Contributing
 
-We welcome contributions! Here's how you can help:
-
-### Adding New Datasets
-1. Create a new dataset schema in `util/dataset_registry.py`
-2. Add field definitions with proper types and operators
-3. Update documentation with dataset-specific examples
-4. Add tests for the new dataset
-
-### Improving Documentation
-1. Update README.md with new features
-2. Add examples to `util/multi_dataset_examples.py`
-3. Create Jupyter notebooks for new use cases
-4. Improve error messages and help text
-
-### Bug Reports & Feature Requests
-1. Open an issue describing the problem or feature
-2. Include code examples and error messages
-3. Specify the dataset and filter conditions used
+We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for details.
 
 ### Development Setup
-```bash
-git clone git@github.com:callzhang/BrightData.git
-cd BrightData
-# Create your feature branch
-git checkout -b feature/your-feature-name
-# Make your changes
-git commit -m "Add your feature"
-git push origin feature/your-feature-name
-# Open a pull request
-```
 
-## 📝 Changelog
+1. Fork the repository
+2. Clone your fork: `git clone https://github.com/yourusername/brightdata-manager.git`
+3. Install dependencies: `pip install -r requirements.txt`
+4. Install UI dependencies: `pip install -r requirements_ui.txt`
+5. Copy `secrets.example.yaml` to `secrets.yaml` and add your API key
+6. Run tests: `python -m pytest tests/`
 
-### Latest Updates (September 2025)
+### Code Style
 
-#### 🔧 Bug Fixes
-- **Fixed API Key Loading**: Resolved 401 Unauthorized errors by fixing header construction in `BrightDataFilter`
-- **Fixed Deduplication System**: Corrected metadata handling in `_find_existing_snapshot` method
-- **Enhanced Error Handling**: Improved error messages and debugging information
-
-#### ✨ New Features
-- **Smart Deduplication**: Automatically detects and reuses existing snapshots with identical conditions
-- **Order-Independent Matching**: Reordered filter conditions are correctly identified as duplicates
-- **Automatic API Key Loading**: Seamless authentication from `secrets.yaml` without manual configuration
-- **Cost Savings**: Prevents duplicate API charges for identical queries
-
-#### 🚀 Improvements
-- **Enhanced Filter Comparison**: Deep recursive comparison with sorting for order independence
-- **Better Documentation**: Comprehensive examples and troubleshooting guide
-- **Robust Error Handling**: Graceful handling of corrupted or incomplete snapshot records
-- **Performance Optimization**: Faster deduplication checks with improved algorithms
-
-### Previous Versions
-- **v1.0**: Initial release with multi-dataset support and basic filtering
-- **v1.1**: Added snapshot management and local record storage
-- **v1.2**: Implemented unified API with direct filter field access
+- Follow PEP 8
+- Use type hints
+- Add docstrings to functions and classes
+- Write tests for new features
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## 🙏 Acknowledgments
 
-- BrightData for providing the comprehensive API
-- The open-source community for inspiration and tools
-- Contributors who help improve this system
+- **BrightData** for providing the comprehensive API
+- **Streamlit** for the amazing web framework
+- **The open source community** for inspiration and contributions
+
+## 📞 Support
+
+- **GitHub Issues** - For bug reports and feature requests
+- **GitHub Discussions** - For questions and general discussion
+- **Documentation** - Check the [docs/](docs/) directory for detailed guides
+
+## 🚀 Roadmap
+
+### Upcoming Features
+- **Additional Datasets** - Support for more e-commerce platforms
+- **Advanced Analytics** - Built-in statistical analysis tools
+- **API Rate Limiting** - Smart rate limiting and retry logic
+- **Data Export** - Export to various formats (Excel, Parquet, etc.)
+- **Scheduled Queries** - Automated query execution
+- **Collaboration Features** - Share queries and results with team members
+
+---
+
+**Made with ❤️ by the BrightData Manager team**

@@ -45,8 +45,10 @@ secrets.yaml
 *.key
 *.pem
 
-# Data and snapshots
+# Data and snapshots (preserve structure but ignore content)
 data/snapshots/
+data/downloads/
+snapshot_records/
 downloads/
 test_snapshots/
 
@@ -78,5 +80,11 @@ amazon_strategy.ipynb
 
 # Private/confidential content
 private/
-snapshot_records/
-data/**/
+
+# Keep directory structure but ignore files
+data/snapshots/*
+!data/snapshots/.gitkeep
+data/downloads/*
+!data/downloads/.gitkeep
+snapshot_records/*
+!snapshot_records/.gitkeep
