@@ -860,6 +860,7 @@ def main():
                 "Dataset ID": selected_record.get('dataset_id', 'N/A'),
                 "Records Limit": selected_record.get('records_limit', 'N/A'),
                 "Status": display_status,
+                "Submission Time": submission_time_display,
                 "Cost": selected_record.get('metadata', {}).get('cost', 'N/A') if selected_record.get('metadata') else 'N/A'
             }
         except (AttributeError, TypeError, KeyError) as e:
@@ -913,6 +914,57 @@ def main():
                 st.warning(f"⚠️ Could not fetch error details: {e}")
         
         st.divider()
+        
+        # Local File Information (if data is available)
+        if data_available:
+            st.subheader("📁 Local File Information")
+            
+            # Display file path and details
+            file_size = data_file.stat().st_size if data_file else 0
+            file_size_mb = file_size / (1024 * 1024)
+            
+            col_file1, col_file2 = st.columns([2, 1])
+            
+            with col_file1:
+                st.write(f"**📂 File Path:** `{data_file}`")
+                st.write(f"**📊 File Size:** {file_size_mb:.2f} MB ({file_size:,} bytes)")
+                st.write(f"**📅 Last Modified:** {datetime.fromtimestamp(data_file.stat().st_mtime).strftime('%Y-%m-%d %H:%M:%S')}")
+            
+            with col_file2:
+                # Prepare file content for download
+                try:
+                    # Read the file content
+                    if data_file.suffix == '.json' or data_file.suffix == '.json.gz':
+                        with open(data_file, 'rb') as f:
+                            file_content = f.read()
+                        mime_type = 'application/json'
+                        file_extension = 'json'
+                    elif data_file.suffix == '.csv' or data_file.suffix == '.csv.gz':
+                        with open(data_file, 'rb') as f:
+                            file_content = f.read()
+                        mime_type = 'text/csv'
+                        file_extension = 'csv'
+                    else:
+                        with open(data_file, 'rb') as f:
+                            file_content = f.read()
+                        mime_type = 'application/octet-stream'
+                        file_extension = data_file.suffix[1:] if data_file.suffix else 'bin'
+                    
+                    # Create download button
+                    st.download_button(
+                        label=f"📥 Download {file_extension.upper()} File",
+                        data=file_content,
+                        file_name=f"{snapshot_id}.{file_extension}",
+                        mime=mime_type,
+                        help=f"Download the {file_extension.upper()} file to your computer",
+                        type="secondary"
+                    )
+                    
+                except Exception as e:
+                    st.error(f"❌ Error reading file: {e}")
+                    st.info("💡 Try refreshing the page or check if the file exists")
+            
+            st.divider()
         
         # Prominent Time Information Section
         st.subheader("🕒 Timeline")
@@ -1135,57 +1187,6 @@ def main():
     
     if data_available:
         st.success("✅ Data available for analysis")
-        
-        # Show local file information and download button
-        st.subheader("📁 Local File Information")
-        
-        # Display file path and details
-        file_size = data_file.stat().st_size if data_file else 0
-        file_size_mb = file_size / (1024 * 1024)
-        
-        col_file1, col_file2 = st.columns([2, 1])
-        
-        with col_file1:
-            st.write(f"**📂 File Path:** `{data_file}`")
-            st.write(f"**📊 File Size:** {file_size_mb:.2f} MB ({file_size:,} bytes)")
-            st.write(f"**📅 Last Modified:** {datetime.fromtimestamp(data_file.stat().st_mtime).strftime('%Y-%m-%d %H:%M:%S')}")
-        
-        with col_file2:
-            # Prepare file content for download
-            try:
-                # Read the file content
-                if data_file.suffix == '.json' or data_file.suffix == '.json.gz':
-                    with open(data_file, 'rb') as f:
-                        file_content = f.read()
-                    mime_type = 'application/json'
-                    file_extension = 'json'
-                elif data_file.suffix == '.csv' or data_file.suffix == '.csv.gz':
-                    with open(data_file, 'rb') as f:
-                        file_content = f.read()
-                    mime_type = 'text/csv'
-                    file_extension = 'csv'
-                else:
-                    with open(data_file, 'rb') as f:
-                        file_content = f.read()
-                    mime_type = 'application/octet-stream'
-                    file_extension = data_file.suffix[1:] if data_file.suffix else 'bin'
-                
-                # Create download button
-                st.download_button(
-                    label=f"📥 Download {file_extension.upper()} File",
-                    data=file_content,
-                    file_name=f"{snapshot_id}.{file_extension}",
-                    mime=mime_type,
-                    help=f"Download the {file_extension.upper()} file to your computer",
-                    type="secondary"
-                )
-                
-            except Exception as e:
-                st.error(f"❌ Error reading file: {e}")
-                st.info("💡 Try refreshing the page or check if the file exists")
-        
-        st.divider()
-        
     else:
         st.warning("⚠️ Data not downloaded yet")
         
