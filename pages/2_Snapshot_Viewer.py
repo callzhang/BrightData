@@ -1017,7 +1017,6 @@ def main():
                     st.error(f"❌ Error reading file: {e}")
                     st.info("💡 Try refreshing the page or check if the file exists")
             
-            st.divider()
         
     
     with col2:
@@ -1044,7 +1043,6 @@ def main():
         for key, value in query_params.items():
             st.write(f"**{key}:** {value}")
         
-        st.divider()
     
     # Data Analysis (if data is available)
     if data_available:
@@ -1065,7 +1063,30 @@ def main():
             
             # Data preview
             st.subheader("🔍 Data Preview")
-            st.dataframe(df.head(10), width='stretch')
+            
+            # Format JSON fields for better display
+            def format_json_field(value):
+                """Format JSON fields for better display in dataframe"""
+                if pd.isna(value):
+                    return "N/A"
+                elif isinstance(value, (dict, list)):
+                    try:
+                        import json
+                        return json.dumps(value, indent=2, ensure_ascii=False)
+                    except:
+                        return str(value)
+                else:
+                    return str(value)
+            
+            # Create a copy of the dataframe for display
+            display_df = df.head(10).copy()
+            
+            # Apply JSON formatting to object columns that might contain JSON
+            for col in display_df.columns:
+                if display_df[col].dtype == 'object':
+                    display_df[col] = display_df[col].apply(format_json_field)
+            
+            st.dataframe(display_df, width='stretch')
             
             # Column information
             st.subheader("📋 Column Information")
