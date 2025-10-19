@@ -1067,15 +1067,25 @@ def main():
             # Format JSON fields for better display
             def format_json_field(value):
                 """Format JSON fields for better display in dataframe"""
-                if pd.isna(value):
-                    return "N/A"
-                elif isinstance(value, (dict, list)):
-                    try:
-                        import json
-                        return json.dumps(value, indent=2, ensure_ascii=False)
-                    except:
+                try:
+                    # Handle pandas array-like values
+                    if hasattr(value, '__len__') and not isinstance(value, (str, dict, list)):
+                        # Convert array-like values to list for JSON serialization
+                        value = list(value)
+                    
+                    # Check for null/NaN values
+                    if pd.isna(value):
+                        return "N/A"
+                    elif isinstance(value, (dict, list)):
+                        try:
+                            import json
+                            return json.dumps(value, indent=2, ensure_ascii=False)
+                        except:
+                            return str(value)
+                    else:
                         return str(value)
-                else:
+                except Exception:
+                    # Fallback for any unexpected data types
                     return str(value)
             
             # Create a copy of the dataframe for display
